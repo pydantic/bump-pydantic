@@ -4,8 +4,11 @@ from libcst.codemod import CodemodContext, VisitorBasedCodemodCommand
 from libcst.codemod.visitors import AddImportsVisitor
 
 
-class BumpPydanticCodemodCommand(VisitorBasedCodemodCommand):
-    DESCRIPTION = "Bump pydantic from 1.x to 2.x."
+class ReplaceConfigClassByDict(VisitorBasedCodemodCommand):
+    """Replace `Config` class by `ConfigDict`.
+
+    This codemod only
+    """
 
     def __init__(self, context: CodemodContext) -> None:
         super().__init__(context)
@@ -86,48 +89,6 @@ class BumpPydanticCodemodCommand(VisitorBasedCodemodCommand):
         self.config_args = []
         return updated_node.with_changes(body=updated_node.body.with_changes(body=body))
 
-    @m.leave(
-        m.ImportFrom(
-            module=m.Attribute(
-                value=m.Name(value="pydantic"),
-                attr=m.Name(value=m.MatchIfTrue(lambda value: value in MODULE_CHANGES)),
-            ),
-        )
-    )
-    def replace_full_imports(
-        self, _: cst.ImportFrom, updated_node: cst.ImportFrom
-    ) -> cst.ImportFrom:
-        module = cst.ensure_type(updated_node.module, cst.Attribute)
-        return updated_node.with_changes(
-            module=module.with_changes(
-                value=cst.Attribute(
-                    value=cst.Name("pydantic"), attr=cst.Name("deprecated")
-                ),
-                attr=cst.Name(value=module.attr.value),
-            )
-        )
-
-    @m.leave(
-        m.ImportFrom(
-            module=m.Name("pydantic"),
-            names=[
-                m.ImportAlias(
-                    name=m.Name(
-                        value=m.MatchIfTrue(lambda value: value in MODULE_CHANGES)
-                    )
-                )
-            ],
-        )
-    )
-    def replace_partial_imports(
-        self, _: cst.ImportFrom, updated_node: cst.ImportFrom
-    ) -> cst.ImportFrom:
-        return updated_node.with_changes(
-            module=cst.Attribute(
-                value=cst.Name("pydantic"), attr=cst.Name("deprecated")
-            )
-        )
-
 
 CONFIG_ATTRS_REPLACEMENT = {
     "allow_population_by_field_name": "populate_by_name",
@@ -144,7 +105,3 @@ CONFIG_ATTRS_REPLACEMENT = {
 
 def replace_config_attribute(old_name: str) -> str:
     return CONFIG_ATTRS_REPLACEMENT.get(old_name, old_name)
-
-
-MODULE_CHANGES = {"tools", "json", "parse", "decorator"}
-MODULE_CHANGES = {"tools", "json", "parse", "decorator"}

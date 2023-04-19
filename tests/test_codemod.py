@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-import pytest
 from libcst.codemod import CodemodTest
 
 from bump_pydantic.command import BumpPydanticCodemodCommand
 
 
-class TestAutotype(CodemodTest):
+class TestPydanticCodemod(CodemodTest):
     TRANSFORM = BumpPydanticCodemodCommand
 
     def test_config_class_noop(self) -> None:
