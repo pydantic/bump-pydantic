@@ -33,7 +33,8 @@ Source = "https://github.com/unknown/bump-pydantic"
 path = "bump_pydantic/__about__.py"
 
 [tool.hatch.envs.default]
-dependencies = ["coverage[toml]>=6.5", "pytest"]
+dependencies = ["coverage[toml]>=6.5", "pytest", "rich"]
+
 [tool.hatch.envs.default.scripts]
 test = "pytest {args:tests}"
 test-cov = "coverage run -m pytest {args:tests}"
@@ -46,6 +47,7 @@ python = ["3.7", "3.8", "3.9", "3.10", "3.11"]
 [tool.hatch.envs.lint]
 detached = true
 dependencies = ["black>=23.1.0", "mypy>=1.0.0", "ruff>=0.0.243"]
+
 [tool.hatch.envs.lint.scripts]
 typing = "mypy --install-types --non-interactive {args:bump_pydantic tests}"
 style = ["ruff {args:.}", "black --check --diff {args:.}"]
