@@ -42,6 +42,38 @@ CHANGED_CONFIG_PARAMS = {
 
 
 def refactor(
+    file: Path,
+    base_classes: dict[str, list[str]],
+    rename_imports: bool = True,
+    rename_methods: bool = True,
+    replace_config_class: bool = True,
+    replace_config_parameters: bool = True,
+) -> None:
+    """Refactor a file to use the new pydantic API.
+
+    Args:
+        file: The file to refactor.
+        base_classes: A dictionary with the base classes of a class.
+        rename_imports: Whether to rename imports.
+        replace_config_class: Whether to replace `Config` class by `ConfigDict`.
+        replace_config_parameters: Whether to replace `Config` parameters by `ConfigDict`
+            parameters.
+    """
+    with file.open("w+") as f:
+        code = f.read()
+        new_code = transform_code(
+            code,
+            base_classes,
+            rename_imports,
+            rename_methods,
+            replace_config_class,
+            replace_config_parameters,
+        )
+        f.seek(0)
+        f.write(new_code)
+
+
+def transform_code(
     code: str,
     base_classes: dict[str, list[str]],
     rename_imports: bool = True,
@@ -56,6 +88,8 @@ def refactor(
         base_classes: A dictionary with the base classes of a class.
         rename_imports: Whether to rename imports.
         replace_config_class: Whether to replace `Config` class by `ConfigDict`.
+        replace_config_parameters: Whether to replace `Config` parameters by `ConfigDict`
+            parameters.
 
     Returns:
         The refactored code.
@@ -95,5 +129,4 @@ def refactor(
 
     for transform in transforms:
         mod = transform.transform_module(mod)
-    return mod.code
     return mod.code

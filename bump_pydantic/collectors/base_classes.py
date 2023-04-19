@@ -18,7 +18,7 @@ class BaseClassesCollector(VisitorBasedCodemodCommand):
         ...
 
     @staticmethod
-    def visit(files: list[Path]) -> dict[str, list[str]]:
+    def collect(files: list[Path]) -> dict[str, list[str]]:
         base_classes = {}
         for file in files:
             with file.open("r") as f:
@@ -27,4 +27,5 @@ class BaseClassesCollector(VisitorBasedCodemodCommand):
                 collector = BaseClassesCollector(context=context)
                 mod.visit(visitor=collector)
                 base_classes.update(collector.base_classes)
+        return base_classes
         return base_classes
