@@ -38,8 +38,13 @@ class ReplaceCallParam(VisitorBasedCodemodCommand):
         for assignment in scope.assignments:
             if isinstance(assignment, ImportAssignment):
                 qualified_names = assignment.get_qualified_names_for(assignment.name)
-                print(qualified_names)
-                if any(qn.name in self.callers for qn in qualified_names):
+                exact_path = any(qn.name in self.callers for qn in qualified_names)
+
+                # When the qualified_names don't have the object that is going to be
+                # used, we need to verify if the module is in the list of callers.
+                caller_modules = [caller.rsplit(".", 1)[0] for caller in self.callers]
+                module_match = any(qn.name in caller_modules for qn in qualified_names)
+                if exact_path or module_match:
                     self.inside_caller = True
 
     def leave_Call(self, _: cst.Call, updated_node: cst.Call) -> cst.BaseExpression:
