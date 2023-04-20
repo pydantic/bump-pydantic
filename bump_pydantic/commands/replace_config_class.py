@@ -5,10 +5,7 @@ from libcst.codemod.visitors import AddImportsVisitor
 
 
 class ReplaceConfigClassByDict(VisitorBasedCodemodCommand):
-    """Replace `Config` class by `ConfigDict`.
-
-    This codemod only
-    """
+    """Replace `Config` class by `ConfigDict` call."""
 
     def __init__(self, context: CodemodContext) -> None:
         super().__init__(context)

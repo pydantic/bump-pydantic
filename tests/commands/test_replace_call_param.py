@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import functools
 
-from bump_pydantic.commands.replace_call_param import ReplaceCallParam
 from libcst.codemod import CodemodTest
+
+from bump_pydantic.commands.replace_call_param import ReplaceCallParam
 
 
 class TestReplaceCallParam(CodemodTest):
