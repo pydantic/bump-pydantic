@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import os
+
 import libcst as cst
-from libcst import matchers as m
 from libcst.codemod import CodemodContext, VisitorBasedCodemodCommand
 from libcst.metadata import TypeInferenceProvider
 from rich.pretty import pprint
@@ -39,8 +40,10 @@ if __name__ == "__main__":
     from libcst.metadata import FullRepoManager
 
     with TemporaryDirectory() as tmpdir:
-        # Create files
-        with open(f"{tmpdir}/a.py", "w") as f:
+        package_dir = f"{tmpdir}/package"
+        os.mkdir(package_dir)
+        module_path = f"{package_dir}/a.py"
+        with open(module_path, "w") as f:
             f.write(
                 textwrap.dedent(
                     """
@@ -54,4 +57,15 @@ if __name__ == "__main__":
             """
                 )
             )
-        mgr = FullRepoManager(".", {"dir/a.py"}, {TypeInferenceProvider})
+        mgr = FullRepoManager(tmpdir, {module_path}, {TypeInferenceProvider})
+        wrapper = mgr.get_metadata_wrapper_for_path(module_path)
+
+        context = CodemodContext()
+        command = RenameMethodCallCommand(
+            context=context,
+            classes=("pydantic.BaseModel",),
+            old_method="dict",
+            new_method="model_dump",
+        )
+        module = wrapper.visit(command)
+        pprint(module)
