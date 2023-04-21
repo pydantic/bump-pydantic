@@ -6,7 +6,7 @@ import libcst as cst
 from libcst.codemod import CodemodContext, VisitorBasedCodemodCommand
 from libcst.codemod.commands.rename import RenameCommand
 
-from bump_pydantic.commands.rename_method import RenameMethodCommand
+from bump_pydantic.commands.rename_method import RenameMethodCallCommand
 from bump_pydantic.commands.replace_call_param import ReplaceCallParam
 from bump_pydantic.commands.replace_config_class import ReplaceConfigClassByDict
 
@@ -105,7 +105,7 @@ def transform_code(
     if rename_methods:
         for old_method, new_method in CHANGED_METHODS.items():
             transforms.append(
-                RenameMethodCommand(
+                RenameMethodCallCommand(
                     context=context,
                     base_classes=("pydantic.BaseModel", "pydantic.main.BaseModel"),
                     old_method=old_method,
