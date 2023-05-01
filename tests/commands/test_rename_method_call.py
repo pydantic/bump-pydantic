@@ -1,21 +1,22 @@
 from __future__ import annotations
+from libcst.metadata import MetadataWrapper
+from pathlib import Path
+from libcst_mypy import MypyTypeInferenceProvider
 
-import functools
+import textwrap
 
+import libcst as cst
 import pytest
-from libcst.codemod import CodemodTest
-from pydantic import BaseModel
+from libcst.codemod import CodemodContext
 
 from bump_pydantic.commands.rename_method_call import RenameMethodCallCommand
 
-pytestmark = pytest.mark.skip(reason="Not implemented yet.")
 
-
-class TestRenameMethodCommand(CodemodTest):
-    TRANSFORM = RenameMethodCallCommand
-
-    def test_rename_method_simple_case(self):
-        before = """
+@pytest.mark.parametrize(
+    "source, output",
+    [
+        pytest.param(
+            """
             from pydantic import BaseModel
 
             class Foo(BaseModel):
@@ -23,8 +24,8 @@ class TestRenameMethodCommand(CodemodTest):
 
             foo = Foo(bar="text")
             foo.dict()
-        """
-        after = """
+            """,
+            """
             from pydantic import BaseModel
 
             class Foo(BaseModel):
@@ -32,11 +33,73 @@ class TestRenameMethodCommand(CodemodTest):
 
             foo = Foo(bar="text")
             foo.model_dump()
-        """
-        self.assertCodemod(
-            before,
-            after,
-            classes=("pydantic.BaseModel", "pydantic.main.BaseModel"),
-            old_method="dict",
-            new_method="model_dump",
+            """,
+            id="dict",
+        ),
+        pytest.param(
+            """
+            class Foo:
+                bar: str
+
+            foo = Foo(bar="text")
+            foo.dict()
+            """,
+            """
+            class Foo:
+                bar: str
+
+            foo = Foo(bar="text")
+            foo.dict()
+            """,
+            id="dict_no_inheritance",
+        ),
+        pytest.param(
+            """
+            from pydantic import BaseModel
+
+            class Foo(BaseModel):
+                foo: str
+
+            class Bar(Foo):
+                bar: str
+
+            bar = Bar(foo="text", bar="text")
+            bar.dict()
+            """,
+            """
+            from pydantic import BaseModel
+
+            class Foo(BaseModel):
+                foo: str
+
+            class Bar(Foo):
+                bar: str
+
+            bar = Bar(foo="text", bar="text")
+            bar.model_dump()
+            """,
+            id="dict_inherited",
+        ),
+    ],
+)
+def test_rename_method_call(source: str, output: str, tmp_path: Path) -> None:
+    package = tmp_path / "package"
+    package.mkdir()
+
+    source_path = package / "a.py"
+    source_path.write_text(textwrap.dedent(source))
+
+    file = str(source_path)
+    cache = MypyTypeInferenceProvider.gen_cache(package, [file])
+    wrapper = MetadataWrapper(
+        cst.parse_module(source_path.read_text()),
+        cache={MypyTypeInferenceProvider: cache[file]},
+    )
+    module = wrapper.visit(
+        RenameMethodCallCommand(
+            context=CodemodContext(wrapper=wrapper),
+            class_name="pydantic.main.BaseModel",
+            methods={"dict": "model_dump"},
         )
+    )
+    assert module.code == textwrap.dedent(output)

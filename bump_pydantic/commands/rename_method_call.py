@@ -1,41 +1,87 @@
 from __future__ import annotations
 
 import libcst as cst
+from typing import cast
+from libcst import matchers as m
 from libcst.codemod import CodemodContext, VisitorBasedCodemodCommand
 from libcst_mypy import MypyTypeInferenceProvider
-from rich.pretty import pprint
+from mypy.nodes import TypeInfo
+from mypy.types import Instance
 
 
 class RenameMethodCallCommand(VisitorBasedCodemodCommand):
+    """This codemod renames a method call of a class.
+
+    Example::
+        # Given the following class and method mapping:
+        # class_name = "pydantic.main.BaseModel"
+        # methods = {"dict": "model_dump"}
+
+        # Before
+
+        from pydantic import BaseModel
+
+        class Foo(BaseModel):
+            bar: str
+
+        foo = Foo(bar="text")
+        foo.dict()
+
+        # After
+
+        from pydantic import BaseModel
+
+        class Foo(BaseModel):
+            bar: str
+
+        foo = Foo(bar="text")
+        foo.model_dump()
+    """
+
     METADATA_DEPENDENCIES = (MypyTypeInferenceProvider,)
 
     def __init__(
         self,
         context: CodemodContext,
-        classes: tuple[str, ...],
-        old_method: str,
-        new_method: str,
+        class_name: str,
+        methods: dict[str, str],
     ) -> None:
         super().__init__(context)
-        self.classes = classes
-        self.old_method = old_method
-        self.new_method = new_method
+        self.class_name = class_name
+        self.methods = methods
 
-    def visit_ImportFrom(self, node: cst.ImportFrom) -> bool | None:
-        return super().visit_ImportFrom(node)
+    def leave_Call(self, original_node: cst.Call, updated_node: cst.Call) -> cst.Call:
+        node = original_node
+        if m.matches(node.func, m.Attribute()):
+            func = cst.ensure_type(node.func, cst.Attribute)
+            scope = self.get_metadata(MypyTypeInferenceProvider, func.value, None)
+            if scope is not None:
+                mypy_type = cast(Instance, scope.mypy_type)
+                type_info = mypy_type.type
+                if self._is_class_name_base_of_type_info(self.class_name, type_info):
+                    return updated_node.with_changes(
+                        func=func.with_changes(
+                            attr=func.attr.with_changes(
+                                value=self.methods[func.attr.value]
+                            )
+                        )
+                    )
+        return updated_node
 
-    def visit_Call(self, node: cst.Call) -> bool | None:
-        scope = self.get_metadata(MypyTypeInferenceProvider, node, None)
-        if scope is not None:
-            pprint(node)
-            pprint(scope)
-        return super().visit_Call(node)
+    def _is_class_name_base_of_type_info(
+        self, class_name: str, type_info: TypeInfo
+    ) -> bool:
+        if type_info.fullname == class_name:
+            return True
+        return any(
+            self._is_class_name_base_of_type_info(class_name, base.type)
+            for base in type_info.bases
+        )
 
 
 if __name__ == "__main__":
     import os
     import textwrap
-    from pathlib import Path
     from tempfile import TemporaryDirectory
 
     from libcst.metadata import FullRepoManager
@@ -58,7 +104,6 @@ if __name__ == "__main__":
             )
             f.write(content)
             f.seek(0)
-            module = cst.parse_module(content)
         mrg = FullRepoManager(
             package_dir, {module_path}, providers={MypyTypeInferenceProvider}
         )
@@ -66,10 +111,7 @@ if __name__ == "__main__":
         context = CodemodContext(wrapper=wrapper)
         command = RenameMethodCallCommand(
             context=context,
-            classes=("pydantic.main.BaseModel",),
-            old_method="dict",
-            new_method="model_dump",
+            class_name="pydantic.main.BaseModel",
+            methods={"dict": "model_dump"},
         )
-        wrapper.visit(command)
-        # for node, mypy_type in mypy_types.items():
-        #     pprint((node, mypy_type))
+        print(wrapper.visit(command).code)
