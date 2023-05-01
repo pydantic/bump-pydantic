@@ -43,7 +43,6 @@ CHANGED_CONFIG_PARAMS = {
 
 def refactor(
     file: Path,
-    base_classes: dict[str, list[str]],
     rename_imports: bool = True,
     rename_methods: bool = True,
     replace_config_class: bool = True,
@@ -53,7 +52,6 @@ def refactor(
 
     Args:
         file: The file to refactor.
-        base_classes: A dictionary with the base classes of a class.
         rename_imports: Whether to rename imports.
         replace_config_class: Whether to replace `Config` class by `ConfigDict`.
         replace_config_parameters: Whether to replace `Config` parameters by `ConfigDict`
@@ -63,7 +61,6 @@ def refactor(
         code = f.read()
         new_code = transform_code(
             code,
-            base_classes,
             rename_imports,
             rename_methods,
             replace_config_class,
@@ -75,7 +72,6 @@ def refactor(
 
 def transform_code(
     code: str,
-    base_classes: dict[str, list[str]],
     rename_imports: bool = True,
     rename_methods: bool = True,
     replace_config_class: bool = True,
@@ -85,8 +81,8 @@ def transform_code(
 
     Args:
         code: The code to refactor.
-        base_classes: A dictionary with the base classes of a class.
         rename_imports: Whether to rename imports.
+        rename_methods: Whether to rename methods.
         replace_config_class: Whether to replace `Config` class by `ConfigDict`.
         replace_config_parameters: Whether to replace `Config` parameters by `ConfigDict`
             parameters.
@@ -94,24 +90,24 @@ def transform_code(
     Returns:
         The refactored code.
     """
-    context = CodemodContext(scratch={"base_classes": base_classes})
+    context = CodemodContext()
     mod = cst.parse_module(code)
     transforms: list[VisitorBasedCodemodCommand] = []
 
     if rename_imports:
-        for old_import, new_import in CHANGED_IMPORTS.items():
-            transforms.append(RenameCommand(context, old_import, new_import))
+        transforms.extend(
+            RenameCommand(context, old_import, new_import)
+            for old_import, new_import in CHANGED_IMPORTS.items()
+        )
 
     if rename_methods:
-        for old_method, new_method in CHANGED_METHODS.items():
-            transforms.append(
-                RenameMethodCallCommand(
-                    context=context,
-                    base_classes=("pydantic.BaseModel", "pydantic.main.BaseModel"),
-                    old_method=old_method,
-                    new_method=new_method,
-                )
+        transforms.append(
+            RenameMethodCallCommand(
+                context=context,
+                class_name="pydantic.main.BaseModel",
+                methods=CHANGED_METHODS,
             )
+        )
 
     if replace_config_class:
         transforms.append(ReplaceConfigClassByDict(context=context))

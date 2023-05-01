@@ -1,4 +1,7 @@
 import textwrap
+from libcst.metadata import MetadataWrapper
+from libcst_mypy import MypyTypeInferenceProvider
+from pathlib import Path
 
 import libcst as cst
 import pytest
@@ -129,7 +132,6 @@ from bump_pydantic.commands.add_default_none import AddDefaultNoneCommand
                     bar: Any = None
             """,
             id="inheritance",
-            marks=pytest.mark.xfail(reason="Not implemented yet"),
         ),
         pytest.param(
             """
@@ -148,7 +150,22 @@ from bump_pydantic.commands.add_default_none import AddDefaultNoneCommand
         ),
     ],
 )
-def test_add_default_none(source: str, output: str):
-    module = cst.parse_module(textwrap.dedent(source))
-    module = module.visit(AddDefaultNoneCommand(context=CodemodContext()))
+def test_add_default_none(source: str, output: str, tmp_path: Path) -> None:
+    package = tmp_path / "package"
+    package.mkdir()
+
+    source_path = package / "a.py"
+    source_path.write_text(textwrap.dedent(source))
+
+    file = str(source_path)
+    cache = MypyTypeInferenceProvider.gen_cache(package, [file])
+    wrapper = MetadataWrapper(
+        cst.parse_module(source_path.read_text()),
+        cache={MypyTypeInferenceProvider: cache[file]},
+    )
+    module = wrapper.visit(
+        AddDefaultNoneCommand(
+            context=CodemodContext(), class_name="pydantic.main.BaseModel"
+        )
+    )
     assert module.code == textwrap.dedent(output)

@@ -1,27 +1,10 @@
 from __future__ import annotations
 
 import libcst as cst
-import libcst.matchers as m
 from libcst._nodes.statement import AnnAssign, ClassDef
 from libcst.codemod import CodemodContext, VisitorBasedCodemodCommand
-
-# TODO: Support inherited classes from `BaseModel`.
-
-base_model_class = m.ClassDef(
-    bases=[
-        m.ZeroOrOne(),
-        m.Arg(
-            value=m.OneOf(
-                m.Attribute(value=m.Name("pydantic"), attr=m.Name("BaseModel")),
-                m.Name("BaseModel"),
-            )
-        ),
-        m.ZeroOrOne(),
-    ]
-)
-visit_base_model_class = m.visit(base_model_class)
-leave_base_model_class = m.leave(base_model_class)
-
+from libcst_mypy import MypyTypeInferenceProvider
+from mypy.nodes import TypeInfo
 
 class AddDefaultNoneCommand(VisitorBasedCodemodCommand):
     """This codemod adds the default value `None` to all fields of a pydantic model that
@@ -45,16 +28,34 @@ class AddDefaultNoneCommand(VisitorBasedCodemodCommand):
             qux: Any = None
     """
 
-    def __init__(self, context: CodemodContext) -> None:
+    METADATA_DEPENDENCIES = (MypyTypeInferenceProvider,)
+
+    def __init__(self, context: CodemodContext, class_name: str) -> None:
         super().__init__(context)
         self.inside_base_model = False
+        self.class_name = class_name
 
-    @visit_base_model_class
-    def visit_base_model(self, _: ClassDef) -> None:
-        self.inside_base_model = True
+    def visit_ClassDef(self, node: ClassDef) -> None:
+        for base in node.bases:
+            scope = self.get_metadata(MypyTypeInferenceProvider, base.value, None)
+            if scope is not None and isinstance(scope.mypy_type, TypeInfo):
+                self.inside_base_model = self._is_class_name_base_of_type_info(
+                    self.class_name, scope.mypy_type
+                )
 
-    @leave_base_model_class
-    def leave_base_model(self, _: ClassDef, updated_node: ClassDef) -> ClassDef:
+    def _is_class_name_base_of_type_info(
+        self, class_name: str, type_info: TypeInfo
+    ) -> bool:
+        if type_info.fullname == class_name:
+            return True
+        return any(
+            self._is_class_name_base_of_type_info(class_name, base.type)
+            for base in type_info.bases
+        )
+
+    def leave_ClassDef(
+        self, original_node: ClassDef, updated_node: ClassDef
+    ) -> ClassDef:
         self.inside_base_model = False
         return updated_node
 
@@ -93,8 +94,12 @@ if __name__ == "__main__":
             f.write(content)
             f.seek(0)
             module = cst.parse_module(content)
-        mrg = FullRepoManager(package_dir, {module_path}, providers={})
+        mrg = FullRepoManager(
+            package_dir, {module_path}, providers={MypyTypeInferenceProvider}
+        )
         wrapper = mrg.get_metadata_wrapper_for_path(module_path)
         context = CodemodContext(wrapper=wrapper)
-        command = AddDefaultNoneCommand(context=context)
+        command = AddDefaultNoneCommand(
+            context=context, class_name="pydantic.main.BaseModel"
+        )
         print(wrapper.visit(command).code)

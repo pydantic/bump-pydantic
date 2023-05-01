@@ -32,7 +32,7 @@ Source = "https://github.com/pydantic/bump-pydantic"
 path = "bump_pydantic/__about__.py"
 
 [tool.hatch.envs.default]
-dependencies = ["coverage[toml]>=6.5", "pytest", "rich", "pydantic"]
+dependencies = ["coverage[toml]>=6.5", "pytest", "rich", "pydantic", "pytest-xdist"]
 
 [tool.hatch.envs.default.scripts]
 test = "pytest {args:tests}"
