@@ -5,6 +5,8 @@ import libcst.matchers as m
 from libcst._nodes.statement import AnnAssign, ClassDef
 from libcst.codemod import CodemodContext, VisitorBasedCodemodCommand
 
+# TODO: Support inherited classes from `BaseModel`.
+
 base_model_class = m.ClassDef(
     bases=[
         m.ZeroOrOne(),
@@ -86,10 +88,11 @@ if __name__ == "__main__":
                     qux: Any
             """
             )
+            print(content)
+            print("=" * 80)
             f.write(content)
             f.seek(0)
             module = cst.parse_module(content)
-            # pprint(module)
         mrg = FullRepoManager(package_dir, {module_path}, providers={})
         wrapper = mrg.get_metadata_wrapper_for_path(module_path)
         context = CodemodContext(wrapper=wrapper)
