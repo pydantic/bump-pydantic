@@ -1,15 +1,13 @@
 from __future__ import annotations
 
-import os
-
 import libcst as cst
 from libcst.codemod import CodemodContext, VisitorBasedCodemodCommand
-from libcst.metadata import TypeInferenceProvider
+from libcst_mypy import MypyTypeInferenceProvider
 from rich.pretty import pprint
 
 
 class RenameMethodCallCommand(VisitorBasedCodemodCommand):
-    METADATA_DEPENDENCIES = (TypeInferenceProvider,)
+    METADATA_DEPENDENCIES = (MypyTypeInferenceProvider,)
 
     def __init__(
         self,
@@ -27,14 +25,17 @@ class RenameMethodCallCommand(VisitorBasedCodemodCommand):
         return super().visit_ImportFrom(node)
 
     def visit_Call(self, node: cst.Call) -> bool | None:
-        scope = self.get_metadata(TypeInferenceProvider, node)
+        scope = self.get_metadata(MypyTypeInferenceProvider, node, None)
         if scope is not None:
+            pprint(node)
             pprint(scope)
         return super().visit_Call(node)
 
 
 if __name__ == "__main__":
+    import os
     import textwrap
+    from pathlib import Path
     from tempfile import TemporaryDirectory
 
     from libcst.metadata import FullRepoManager
@@ -44,9 +45,8 @@ if __name__ == "__main__":
         os.mkdir(package_dir)
         module_path = f"{package_dir}/a.py"
         with open(module_path, "w") as f:
-            f.write(
-                textwrap.dedent(
-                    """
+            content = textwrap.dedent(
+                """
                 from pydantic import BaseModel
 
                 class Foo(BaseModel):
@@ -55,17 +55,21 @@ if __name__ == "__main__":
                 foo = Foo(bar="text")
                 foo.dict()
             """
-                )
             )
-        mgr = FullRepoManager(tmpdir, {module_path}, {TypeInferenceProvider})
-        wrapper = mgr.get_metadata_wrapper_for_path(module_path)
-
-        context = CodemodContext()
+            f.write(content)
+            f.seek(0)
+            module = cst.parse_module(content)
+        mrg = FullRepoManager(
+            package_dir, {module_path}, providers={MypyTypeInferenceProvider}
+        )
+        wrapper = mrg.get_metadata_wrapper_for_path(module_path)
+        context = CodemodContext(wrapper=wrapper)
         command = RenameMethodCallCommand(
             context=context,
-            classes=("pydantic.BaseModel",),
+            classes=("pydantic.main.BaseModel",),
             old_method="dict",
             new_method="model_dump",
         )
-        module = wrapper.visit(command)
-        pprint(module)
+        wrapper.visit(command)
+        # for node, mypy_type in mypy_types.items():
+        #     pprint((node, mypy_type))

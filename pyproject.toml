@@ -14,7 +14,6 @@ authors = [{ name = "Marcelo Trylesinski", email = "marcelotryle@gmail.com" }]
 classifiers = [
   "Development Status :: 4 - Beta",
   "Programming Language :: Python",
-  "Programming Language :: Python :: 3.7",
   "Programming Language :: Python :: 3.8",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
@@ -22,12 +21,12 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
-dependencies = ["libcst>=0.4.9"]
+dependencies = ["typer>=0.7.0", "rich>=13.3.4", "libcst-mypy"]
 
 [project.urls]
-Documentation = "https://github.com/unknown/bump-pydantic#readme"
-Issues = "https://github.com/unknown/bump-pydantic/issues"
-Source = "https://github.com/unknown/bump-pydantic"
+Documentation = "https://github.com/pydantic/bump-pydantic#readme"
+Issues = "https://github.com/pydantic/bump-pydantic/issues"
+Source = "https://github.com/pydantic/bump-pydantic"
 
 [tool.hatch.version]
 path = "bump_pydantic/__about__.py"
@@ -87,6 +86,7 @@ select = [
 ignore = [
   # Allow non-abstract empty methods in abstract base classes
   "B027",
+  "B008",
   # Ignore checks for possible passwords
   "S105",
   "S106",

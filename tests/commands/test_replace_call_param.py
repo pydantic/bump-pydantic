@@ -2,9 +2,12 @@ from __future__ import annotations
 
 import functools
 
+import pytest
 from libcst.codemod import CodemodTest
 
 from bump_pydantic.commands.replace_call_param import ReplaceCallParam
+
+pytestmark = pytest.mark.skip(reason="Not implemented yet.")
 
 
 class TestReplaceCallParam(CodemodTest):

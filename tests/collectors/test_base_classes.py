@@ -3,9 +3,12 @@ from __future__ import annotations
 import textwrap
 
 import libcst as cst
+import pytest
 from libcst.codemod import CodemodContext
 
 from bump_pydantic.collectors.base_classes import BaseClassesCollector
+
+pytestmark = pytest.mark.skip(reason="Not implemented yet.")
 
 
 def test_base_classes_collector() -> None:

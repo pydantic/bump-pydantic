@@ -23,6 +23,8 @@ pip install bump-pydantic
 - [X] `Config` class to `model_config` attribute on `BaseModel`.
 - [ ] Removed Constrained<Type>" - raise warning.
 - [X] Replace imports that changed location.
+- [ ] Add None as default value to `Optional[X]`, and `Any`. Unless it has `...` as default value.
+- [ ] `min_items` becomes `min_length`.
 
 ## License
 

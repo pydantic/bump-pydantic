@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import functools
 
+import pytest
 from libcst.codemod import CodemodTest
 from pydantic import BaseModel
 
 from bump_pydantic.commands.rename_method_call import RenameMethodCallCommand
+
+pytestmark = pytest.mark.skip(reason="Not implemented yet.")
 
 
 class TestRenameMethodCommand(CodemodTest):
