@@ -30,3 +30,7 @@ def main(
         for error_msg in pool.imap_unordered(refactor_call, files):
             if isinstance(error_msg, str):
                 print(error_msg)  # noqa
+
+
+if __name__ == "__main__":
+    app()

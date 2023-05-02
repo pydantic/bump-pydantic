@@ -7,7 +7,7 @@ name = "bump-pydantic"
 dynamic = ["version"]
 description = ''
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 license = "MIT"
 keywords = []
 authors = [{ name = "Marcelo Trylesinski", email = "marcelotryle@gmail.com" }]
@@ -20,6 +20,7 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
+  "Framework :: Pydantic",
 ]
 dependencies = ["typer>=0.7.0", "rich>=13.3.4", "libcst-mypy"]
 
@@ -28,8 +29,11 @@ Documentation = "https://github.com/pydantic/bump-pydantic#readme"
 Issues = "https://github.com/pydantic/bump-pydantic/issues"
 Source = "https://github.com/pydantic/bump-pydantic"
 
+[project.scripts]
+bump-pydantic = "bump_pydantic.__main__:app"
+
 [tool.hatch.version]
-path = "bump_pydantic/__about__.py"
+path = "bump_pydantic/__init__.py"
 
 [tool.hatch.envs.default]
 dependencies = ["coverage[toml]>=6.5", "pytest", "rich", "pydantic", "pytest-xdist"]
@@ -54,11 +58,11 @@ fmt = ["black {args:.}", "ruff --fix {args:.}", "style"]
 all = ["style", "typing"]
 
 [tool.black]
-target-version = ["py37"]
+target-version = ["py38"]
 skip-string-normalization = true
 
 [tool.ruff]
-target-version = "py37"
+target-version = "py38"
 line-length = 88
 select = [
   "A",
@@ -117,7 +121,6 @@ ban-relative-imports = "all"
 source_pkgs = ["bump_pydantic", "tests"]
 branch = true
 parallel = true
-omit = ["bump_pydantic/__about__.py"]
 
 [tool.coverage.paths]
 bump_pydantic = ["bump_pydantic", "*/bump-pydantic/bump_pydantic"]
