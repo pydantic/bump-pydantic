@@ -120,11 +120,12 @@ ban-relative-imports = "all"
 [tool.coverage.run]
 source_pkgs = ["bump_pydantic", "tests"]
 branch = true
-parallel = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+exclude_lines = ["no cov", "if __name__ == .__main__.:", "if TYPE_CHECKING:"]
 
 [tool.coverage.paths]
 bump_pydantic = ["bump_pydantic", "*/bump-pydantic/bump_pydantic"]
 tests = ["tests", "*/bump-pydantic/tests"]
-
-[tool.coverage.report]
-exclude_lines = ["no cov", "if __name__ == .__main__.:", "if TYPE_CHECKING:"]
