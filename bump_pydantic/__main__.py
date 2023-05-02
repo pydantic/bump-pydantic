@@ -3,8 +3,6 @@ import multiprocessing
 from pathlib import Path
 from typing import List
 
-import libcst as cst
-from libcst.codemod import CodemodContext
 from typer import Argument, Typer
 
 from bump_pydantic.codemods import refactor
