@@ -1,88 +1,109 @@
 from __future__ import annotations
+import textwrap
 
-import functools
+from pathlib import Path
 
+import libcst as cst
 import pytest
-from libcst.codemod import CodemodTest
+from libcst.codemod import CodemodContext
+from libcst.metadata import MetadataWrapper
+from libcst_mypy import MypyTypeInferenceProvider
 
 from bump_pydantic.commands.replace_call_param import ReplaceCallParam
 
-pytestmark = pytest.mark.skip(reason="Not implemented yet.")
 
+@pytest.mark.parametrize(
+    "source, output",
+    [
+        pytest.param(
+            """
+            from pydantic import ConfigDict
 
-class TestReplaceCallParam(CodemodTest):
-    TRANSFORM = ReplaceCallParam
-
-    def __init__(self, methodName: str = "runTest") -> None:
-        super().__init__(methodName)
-        self.customAssert = functools.partial(
-            self.assertCodemod,
-            callers=("pydantic.ConfigDict", "pydantic.config.ConfigDict"),
-            old_param="param",
-            new_param="kwarg",
-        )
-
-    def test_replace_param(self) -> None:
-        before = """
+            ConfigDict(kwarg="potato")
+            """,
+            """
             from pydantic import ConfigDict
 
             ConfigDict(param="potato")
-        """
-        after = """
-        from pydantic import ConfigDict
+            """,
+            id="simple",
+        ),
+        pytest.param(
+            """
+            from pydantic import ConfigDict as ConfigDicto
 
-        ConfigDict(kwarg="potato")
-        """
-        self.customAssert(before, after)
-
-    def test_replace_param_with_alias(self) -> None:
-        before = """
+            ConfigDicto(kwarg="potato")
+            """,
+            """
             from pydantic import ConfigDict as ConfigDicto
 
             ConfigDicto(param="potato")
-        """
-        after = """
-        from pydantic import ConfigDict as ConfigDicto
+            """,
+            id="alias",
+        ),
+        pytest.param(
+            """
+            from pydantic import config
 
-        ConfigDicto(kwarg="potato")
-        """
-        self.customAssert(before, after)
-
-    def test_replace_param_with_import_from(self) -> None:
-        before = """
+            config.ConfigDict(kwarg="potato")
+            """,
+            """
             from pydantic import config
 
             config.ConfigDict(param="potato")
-        """
-        after = """
-        from pydantic import config
+            """,
+            id="from",
+        ),
+        pytest.param(
+            """
+            from pydantic import config as configo
 
-        config.ConfigDict(kwarg="potato")
-        """
-        self.customAssert(before, after)
-
-    def test_replace_param_with_import_from_as(self) -> None:
-        before = """
+            configo.ConfigDict(kwarg="potato")
+            """,
+            """
             from pydantic import config as configo
 
             configo.ConfigDict(param="potato")
-        """
-        after = """
-        from pydantic import config as configo
+            """,
+            id="from_alias",
+        ),
+        pytest.param(
+            """
+            import pydantic
 
-        configo.ConfigDict(kwarg="potato")
-        """
-        self.customAssert(before, after)
-
-    def test_replace_pure_pydantic_import(self) -> None:
-        before = """
+            pydantic.ConfigDict(kwarg="potato")
+            """,
+            """
             import pydantic
 
             pydantic.ConfigDict(param="potato")
-        """
-        after = """
-        import pydantic
+            """,
+            id="import",
+        ),
+    ],
+)
+def test_replace_call_param(source: str, output: str, tmp_path: Path) -> None:
+    package = tmp_path / "package"
+    package.mkdir()
 
-        pydantic.ConfigDict(kwarg="potato")
-        """
-        self.customAssert(before, after)
+    source_path = package / "a.py"
+    source_path.write_text(textwrap.dedent(source))
+
+    file = str(source_path)
+    cache = MypyTypeInferenceProvider.gen_cache(package, [file])
+    for key, value in cache.items():
+        print(key)
+        print(value.mypy_file)
+        print()
+    wrapper = MetadataWrapper(
+        cst.parse_module(source_path.read_text()),
+        cache={MypyTypeInferenceProvider: cache[file]},
+    )
+    module = wrapper.visit(
+        ReplaceCallParam(
+            context=CodemodContext(wrapper=wrapper),
+            caller="pydantic.config.ConfigDict",
+            params={"kwarg": "param"},
+        )
+    )
+    assert module.code == textwrap.dedent(output)

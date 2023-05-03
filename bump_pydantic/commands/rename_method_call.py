@@ -56,16 +56,15 @@ class RenameMethodCallCommand(VisitorBasedCodemodCommand):
             func = cst.ensure_type(node.func, cst.Attribute)
             scope = self.get_metadata(MypyTypeInferenceProvider, func.value, None)
             if scope is not None:
-                mypy_type = cast(Instance, scope.mypy_type)
-                type_info = mypy_type.type
-                if self._is_class_name_base_of_type_info(self.class_name, type_info):
-                    return updated_node.with_changes(
-                        func=func.with_changes(
-                            attr=func.attr.with_changes(
-                                value=self.methods[func.attr.value]
-                            )
-                        )
-                    )
+                mypy_type = scope.mypy_type
+                if isinstance(mypy_type, Instance):
+                    info = mypy_type.type
+                    if self._is_class_name_base_of_type_info(self.class_name, info):
+                        new_method = self.methods.get(func.attr.value)
+                        if new_method is not None:
+                            attr = func.attr.with_changes(value=new_method)
+                            func_with_changes = func.with_changes(attr=attr)
+                            return updated_node.with_changes(func=func_with_changes)
         return updated_node
 
     def _is_class_name_base_of_type_info(

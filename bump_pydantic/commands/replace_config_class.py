@@ -1,15 +1,50 @@
+from typing import List
+
 import libcst as cst
 from libcst import matchers as m
 from libcst.codemod import CodemodContext, VisitorBasedCodemodCommand
+from libcst.metadata import PositionProvider
 from libcst.codemod.visitors import AddImportsVisitor
+
+
+base_model_with_config = m.ClassDef(
+    bases=[
+        m.ZeroOrMore(),
+        m.Arg(),
+        m.ZeroOrMore(),
+    ],
+    body=m.IndentedBlock(
+        body=[
+            m.ZeroOrMore(),
+            m.ClassDef(name=m.Name(value="Config"), bases=[]),
+            m.ZeroOrMore(),
+        ]
+    ),
+)
+base_model_with_config_child = m.ClassDef(
+    bases=[
+        m.ZeroOrMore(),
+        m.Arg(),
+        m.ZeroOrMore(),
+    ],
+    body=m.IndentedBlock(
+        body=[
+            m.ZeroOrMore(),
+            m.ClassDef(name=m.Name(value="Config"), bases=[m.AtLeastN(n=1)]),
+            m.ZeroOrMore(),
+        ]
+    ),
+)
 
 
 class ReplaceConfigClassByDict(VisitorBasedCodemodCommand):
     """Replace `Config` class by `ConfigDict` call."""
 
+    METADATA_DEPENDENCIES = (PositionProvider,)
+
     def __init__(self, context: CodemodContext) -> None:
         super().__init__(context)
-        self.config_args = []
+        self.config_args: List[cst.Arg] = []
 
     @m.visit(m.ClassDef(name=m.Name(value="Config")))
     def visit_config_class(self, node: cst.ClassDef) -> None:
@@ -24,9 +59,7 @@ class ReplaceConfigClassByDict(VisitorBasedCodemodCommand):
                             assignment.targets[0], cst.AssignTarget
                         )
                         keyword = cst.ensure_type(assign_target.target, cst.Name)
-                        keyword = keyword.with_changes(
-                            value=replace_config_attribute(keyword.value)
-                        )
+                        keyword = keyword.with_changes(value=keyword.value)
                         arg = cst.Arg(
                             value=assignment.value,
                             keyword=keyword,
@@ -37,22 +70,18 @@ class ReplaceConfigClassByDict(VisitorBasedCodemodCommand):
                         )
                         self.config_args.append(arg)
 
-    @m.leave(
-        m.ClassDef(
-            bases=[
-                m.ZeroOrMore(),
-                m.Arg(),
-                m.ZeroOrMore(),
-            ],
-            body=m.IndentedBlock(
-                body=[
-                    m.ZeroOrMore(),
-                    m.ClassDef(name=m.Name(value="Config")),
-                    m.ZeroOrMore(),
-                ]
-            ),
+    @m.leave(base_model_with_config_child)
+    def leave_config_class_child(
+        self, original_node: cst.ClassDef, updated_node: cst.ClassDef
+    ) -> cst.ClassDef:
+        position = self.get_metadata(PositionProvider, original_node)
+        print(
+            "You'll need to manually replace the `Config` class to the `model_config` attribute."
         )
-    )
+        print(f"File: {self.context.filename}:-{position.start.line},{position.start.column}:{position.end.line},{position.end.column}")
+        return updated_node
+
+    @m.leave(base_model_with_config)
     def leave_config_class(
         self, original_node: cst.ClassDef, updated_node: cst.ClassDef
     ) -> cst.ClassDef:
@@ -68,9 +97,7 @@ class ReplaceConfigClassByDict(VisitorBasedCodemodCommand):
         )
         block = cst.ensure_type(original_node.body, cst.IndentedBlock)
         body = [
-            statement
-            if not m.matches(statement, m.ClassDef(name=m.Name(value="Config")))
-            else cst.SimpleStatementLine(
+            cst.SimpleStatementLine(
                 body=[
                     cst.Assign(
                         targets=[cst.AssignTarget(target=cst.Name("model_config"))],
@@ -81,24 +108,9 @@ class ReplaceConfigClassByDict(VisitorBasedCodemodCommand):
                     )
                 ],
             )
+            if m.matches(statement, m.ClassDef(name=m.Name(value="Config")))
+            else statement
             for statement in block.body
         ]
         self.config_args = []
         return updated_node.with_changes(body=updated_node.body.with_changes(body=body))
-
-
-CONFIG_ATTRS_REPLACEMENT = {
-    "allow_population_by_field_name": "populate_by_name",
-    "anystr_lower": "str_to_lower",
-    "anystr_strip_whitespace": "str_strip_whitespace",
-    "anystr_upper": "str_to_upper",
-    "keep_untouched": "ignored_types",
-    "max_anystr_length": "str_max_length",
-    "min_anystr_length": "str_min_length",
-    "orm_mode": "from_attributes",
-    "validate_all": "validate_default",
-}
-
-
-def replace_config_attribute(old_name: str) -> str:
-    return CONFIG_ATTRS_REPLACEMENT.get(old_name, old_name)
