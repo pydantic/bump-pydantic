@@ -5,7 +5,6 @@ import libcst as cst
 import libcst.matchers as m
 from libcst.codemod import CodemodContext, VisitorBasedCodemodCommand
 from libcst.metadata import ImportAssignment, ScopeProvider
-from libcst_mypy import MypyTypeInferenceProvider
 
 
 class ReplaceCallParam(VisitorBasedCodemodCommand):
@@ -16,35 +15,39 @@ class ReplaceCallParam(VisitorBasedCodemodCommand):
     it with the new parameter.
     """
 
-    METADATA_DEPENDENCIES = (MypyTypeInferenceProvider,)
+    METADATA_DEPENDENCIES = (ScopeProvider,)
 
     def __init__(
-        self, context: CodemodContext, caller: str, params: dict[str, str]
+        self,
+        context: CodemodContext,
+        callers: tuple[str, ...],
+        params: dict[str, str],
     ) -> None:
         super().__init__(context)
-        self.caller = caller
+        self.callers = callers
         self.params = params
 
         self.inside_caller = False
 
     def visit_Call(self, node: cst.Call) -> None:
-        scope = self.get_metadata(MypyTypeInferenceProvider, node.func, None)
-        print(scope)
-        # if scope is None:
-        #     return
-        # for assignment in scope.assignments:
-        #     if isinstance(assignment, ImportAssignment):
-        #         qualified_names = assignment.get_qualified_names_for(assignment.name)
-        #         exact_path = any(qn.name == self.caller for qn in qualified_names)
+        scope = self.get_metadata(ScopeProvider, node)
+        if scope is None:
+            return
+        for assignment in scope.assignments:
+            if isinstance(assignment, ImportAssignment):
+                qualified_names = assignment.get_qualified_names_for(assignment.name)
+                exact_path = any(qn.name in self.callers for qn in qualified_names)
 
-        #         # When the qualified_names don't have the object that is going to be
-        #         # used, we need to verify if the module is in the list of callers.
-        #         caller_modules = [caller.rsplit(".", 1)[0] for caller in self.callers]
-        #         module_match = any(qn.name in caller_modules for qn in qualified_names)
-        #         if exact_path or module_match:
-        #             self.inside_caller = True
+                # When the qualified_names don't have the object that is going to be
+                # used, we need to verify if the module is in the list of callers.
+                caller_modules = [caller.rsplit(".", 1)[0] for caller in self.callers]
+                module_match = any(qn.name in caller_modules for qn in qualified_names)
+                if exact_path or module_match:
+                    self.inside_caller = True
 
-    def leave_Call(self, original_node: cst.Call, updated_node: cst.Call) -> cst.Call:
+    def leave_Call(
+        self, original_node: cst.Call, updated_node: cst.Call
+    ) -> cst.BaseExpression:
         self.inside_caller = False
         return updated_node
 
@@ -83,8 +86,7 @@ if __name__ == "__main__":
     command = ReplaceCallParam(
         context=context,
         callers=("pydantic.ConfigDict", "pydantic.config.ConfigDict"),
-        old_param="potato",
-        new_param="tomato",
+        params={"potato": "param"},
     )
     mod = wrapper.visit(command)
     console.print(mod.code)

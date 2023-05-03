@@ -91,10 +91,6 @@ def test_replace_call_param(source: str, output: str, tmp_path: Path) -> None:
 
     file = str(source_path)
     cache = MypyTypeInferenceProvider.gen_cache(package, [file])
-    for key, value in cache.items():
-        print(key)
-        print(value.mypy_file)
-        print()
     wrapper = MetadataWrapper(
         cst.parse_module(source_path.read_text()),
         cache={MypyTypeInferenceProvider: cache[file]},
@@ -102,7 +98,7 @@ def test_replace_call_param(source: str, output: str, tmp_path: Path) -> None:
     module = wrapper.visit(
         ReplaceCallParam(
             context=CodemodContext(wrapper=wrapper),
-            caller="pydantic.config.ConfigDict",
+            callers=("pydantic.config.ConfigDict", "pydantic.ConfigDict"),
             params={"kwarg": "param"},
         )
     )

@@ -65,9 +65,9 @@ def main(
                 print(f"Processing {filename} with {transform.__class__.__name__}")
 
             with open(filename, "r") as fp:
-                oldcode = fp.read()
+                old_code = fp.read()
 
-            input_tree = cst.parse_module(oldcode)
+            input_tree = cst.parse_module(old_code)
             output_tree = transform.transform_module(input_tree)
 
             input_code = input_tree.code
@@ -75,6 +75,7 @@ def main(
 
             if input_code != output_code:
                 if diff:
+                    # TODO: Should be colored.
                     lines = difflib.unified_diff(
                         input_code.splitlines(keepends=True),
                         output_code.splitlines(keepends=True),

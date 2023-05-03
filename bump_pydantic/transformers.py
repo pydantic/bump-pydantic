@@ -51,6 +51,7 @@ def gather_transformers(
     """Gather all transformers to apply.
 
     Args:
+        add_default_none: Whether to add `None` to fields.
         rename_imports: Whether to rename imports.
         rename_methods: Whether to rename methods.
         replace_config_class: Whether to replace `Config` class by `ConfigDict`.
@@ -92,7 +93,7 @@ def gather_transformers(
         transformers.append(
             lambda context: ReplaceCallParam(
                 context=context,
-                caller="pydantic.config.ConfigDict",
+                callers=("pydantic.config.ConfigDict", "pydantic.ConfigDict"),
                 params=CHANGED_CONFIG_PARAMS,
             )
         )
