@@ -7,33 +7,37 @@ name = "bump-pydantic"
 dynamic = ["version"]
 description = ''
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 license = "MIT"
 keywords = []
 authors = [{ name = "Marcelo Trylesinski", email = "marcelotryle@gmail.com" }]
 classifiers = [
   "Development Status :: 4 - Beta",
   "Programming Language :: Python",
-  "Programming Language :: Python :: 3.7",
   "Programming Language :: Python :: 3.8",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
+  "Framework :: Pydantic",
 ]
-dependencies = ["libcst>=0.4.9"]
+dependencies = ["typer>=0.7.0", "rich>=13.3.4", "libcst-mypy"]
 
 [project.urls]
-Documentation = "https://github.com/unknown/bump-pydantic#readme"
-Issues = "https://github.com/unknown/bump-pydantic/issues"
-Source = "https://github.com/unknown/bump-pydantic"
+Documentation = "https://github.com/pydantic/bump-pydantic#readme"
+Issues = "https://github.com/pydantic/bump-pydantic/issues"
+Source = "https://github.com/pydantic/bump-pydantic"
+
+[project.scripts]
+bump-pydantic = "bump_pydantic.__main__:app"
 
 [tool.hatch.version]
-path = "bump_pydantic/__about__.py"
+path = "bump_pydantic/__init__.py"
 
 [tool.hatch.envs.default]
-dependencies = ["coverage[toml]>=6.5", "pytest"]
+dependencies = ["coverage[toml]>=6.5", "pytest", "rich", "pydantic", "pytest-xdist"]
+
 [tool.hatch.envs.default.scripts]
 test = "pytest {args:tests}"
 test-cov = "coverage run -m pytest {args:tests}"
@@ -41,11 +45,12 @@ cov-report = ["- coverage combine", "coverage report"]
 cov = ["test-cov", "cov-report"]
 
 [[tool.hatch.envs.all.matrix]]
-python = ["3.7", "3.8", "3.9", "3.10", "3.11"]
+python = ["3.8", "3.9", "3.10", "3.11"]
 
 [tool.hatch.envs.lint]
 detached = true
 dependencies = ["black>=23.1.0", "mypy>=1.0.0", "ruff>=0.0.243"]
+
 [tool.hatch.envs.lint.scripts]
 typing = "mypy --install-types --non-interactive {args:bump_pydantic tests}"
 style = ["ruff {args:.}", "black --check --diff {args:.}"]
@@ -53,11 +58,11 @@ fmt = ["black {args:.}", "ruff --fix {args:.}", "style"]
 all = ["style", "typing"]
 
 [tool.black]
-target-version = ["py37"]
+target-version = ["py38"]
 skip-string-normalization = true
 
 [tool.ruff]
-target-version = "py37"
+target-version = "py38"
 line-length = 88
 select = [
   "A",
@@ -66,18 +71,14 @@ select = [
   "C",
   "DTZ",
   "E",
-  "EM",
   "F",
-  "FBT",
   "I",
   "ICN",
   "ISC",
-  "N",
   "PLC",
   "PLE",
   "PLR",
   "PLW",
-  "Q",
   "RUF",
   "S",
   "T",
@@ -89,8 +90,7 @@ select = [
 ignore = [
   # Allow non-abstract empty methods in abstract base classes
   "B027",
-  # Allow boolean positional values in function calls, like `dict.get(... True)`
-  "FBT003",
+  "B008",
   # Ignore checks for possible passwords
   "S105",
   "S106",
@@ -120,12 +120,12 @@ ban-relative-imports = "all"
 [tool.coverage.run]
 source_pkgs = ["bump_pydantic", "tests"]
 branch = true
-parallel = true
-omit = ["bump_pydantic/__about__.py"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+exclude_lines = ["no cov", "if __name__ == .__main__.:", "if TYPE_CHECKING:"]
 
 [tool.coverage.paths]
 bump_pydantic = ["bump_pydantic", "*/bump-pydantic/bump_pydantic"]
 tests = ["tests", "*/bump-pydantic/tests"]
-
-[tool.coverage.report]
-exclude_lines = ["no cov", "if __name__ == .__main__.:", "if TYPE_CHECKING:"]

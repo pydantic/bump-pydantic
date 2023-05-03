@@ -9,7 +9,7 @@
 
 - [bump-pydantic](#bump-pydantic)
   - [Installation](#installation)
-  - [Checklist](#checklist)
+  - [Usage](#usage)
   - [License](#license)
 
 ## Installation
@@ -18,11 +18,13 @@
 pip install bump-pydantic
 ```
 
-## Checklist
+## Usage
 
-- [X] `Config` class to `model_config` attribute on `BaseModel`.
-- [ ] Removed Constrained<Type>" - raise warning.
-- [X] Replace imports that changed location.
+You can run `bump-pydantic` from the command line:
+
+```console
+bump-pydantic <FILES>
+```
 
 ## License
 
