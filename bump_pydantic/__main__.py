@@ -1,16 +1,15 @@
-import sys
 import difflib
-import time
-import libcst as cst
-from libcst.metadata import ScopeProvider
-from libcst.helpers import calculate_module_and_package
-from libcst_mypy import MypyTypeInferenceProvider
-from libcst.codemod import CodemodContext
-from libcst.metadata import FullRepoManager, PositionProvider
 import os
+import sys
+import time
 from pathlib import Path
 
-from typer import Argument, Typer, Option
+import libcst as cst
+from libcst.codemod import CodemodContext
+from libcst.helpers import calculate_module_and_package
+from libcst.metadata import FullRepoManager, PositionProvider, ScopeProvider
+from libcst_mypy import MypyTypeInferenceProvider
+from typer import Argument, Option, Typer
 
 from bump_pydantic.transformers import gather_transformers
 
@@ -23,7 +22,10 @@ def main(
     diff: bool = Option(False, help="Show diff instead of applying changes."),
     debug: bool = Option(False, help="Show debug logs."),
     add_default_none: bool = True,
-    rename_imports: bool = True,
+    # NOTE: It looks like there are some issues with the libcst.codemod.RenameCommand.
+    # To replicate the issue: clone aiopenapi3, and run `python -m bump_pydantic aiopenapi3`.
+    # For that reason, the default is False.
+    rename_imports: bool = False,
     rename_methods: bool = True,
     replace_config_class: bool = True,
     replace_config_parameters: bool = True,
@@ -64,7 +66,7 @@ def main(
             if debug:
                 print(f"Processing {filename} with {transform.__class__.__name__}")
 
-            with open(filename, "r") as fp:
+            with open(filename) as fp:
                 old_code = fp.read()
 
             input_tree = cst.parse_module(old_code)
