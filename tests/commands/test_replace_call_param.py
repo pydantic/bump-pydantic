@@ -1,6 +1,6 @@
 from __future__ import annotations
-import textwrap
 
+import textwrap
 from pathlib import Path
 
 import libcst as cst

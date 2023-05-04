@@ -1,7 +1,9 @@
-from typer.testing import CliRunner
-from dirty_equals import IsAnyStr
-from pathlib import Path
 import os
+from pathlib import Path
+
+from dirty_equals import IsAnyStr
+from typer.testing import CliRunner
+
 from bump_pydantic.__main__ import app
 
 
@@ -48,7 +50,7 @@ def test_integration(tmp_path: Path) -> None:
         "+    b: Optional[int] = None",
         "+    c: Union[int, None] = None",
         "+    d: Any = None",
-        '     e: Dict[str, str]',
+        "     e: Dict[str, str]",
         "You'll need to manually replace the `Config` class to the `model_config` attribute.",
         IsAnyStr(),
         # NOTE: Rename `Config` class to `model_config` attribute.

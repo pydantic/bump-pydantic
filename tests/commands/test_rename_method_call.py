@@ -1,13 +1,13 @@
 from __future__ import annotations
-from libcst.metadata import MetadataWrapper
-from pathlib import Path
-from libcst_mypy import MypyTypeInferenceProvider
 
 import textwrap
+from pathlib import Path
 
 import libcst as cst
 import pytest
 from libcst.codemod import CodemodContext
+from libcst.metadata import MetadataWrapper
+from libcst_mypy import MypyTypeInferenceProvider
 
 from bump_pydantic.commands.rename_method_call import RenameMethodCallCommand
 
