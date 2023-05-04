@@ -1,6 +1,4 @@
 import textwrap
-from libcst.metadata import MetadataWrapper
-from libcst_mypy import MypyTypeInferenceProvider
 from pathlib import Path
 
 import libcst as cst
