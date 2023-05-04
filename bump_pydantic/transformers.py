@@ -9,6 +9,7 @@ from bump_pydantic.commands.add_default_none import AddDefaultNoneCommand
 from bump_pydantic.commands.rename_method_call import RenameMethodCallCommand
 from bump_pydantic.commands.replace_call_param import ReplaceCallParam
 from bump_pydantic.commands.replace_config_class import ReplaceConfigClassByDict
+from bump_pydantic.commands.use_settings import UsePydanticSettingsCommand
 
 CHANGED_IMPORTS = {
     "pydantic.tools": "pydantic.deprecated.tools",
@@ -78,6 +79,10 @@ def gather_transformers(
             lambda context: RenameCommand(context, old_import, new_import)
             for old_import, new_import in CHANGED_IMPORTS.items()
         )
+        # NOTE: Including this here, since there's an issue on RenameCommand, and
+        # UsePydanticSettingsCommand is just a wrapper - which could have been included
+        # on the list of changed imports above.
+        transformers.append(UsePydanticSettingsCommand)
 
     if add_default_none:
         transformers.append(
