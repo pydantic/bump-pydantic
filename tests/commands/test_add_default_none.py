@@ -6,6 +6,8 @@ from pathlib import Path
 import libcst as cst
 import pytest
 from libcst.codemod import CodemodContext
+from libcst.metadata import MetadataWrapper
+from libcst_mypy import MypyTypeInferenceProvider
 
 from bump_pydantic.commands.add_default_none import AddDefaultNoneCommand
 
@@ -33,6 +35,27 @@ from bump_pydantic.commands.add_default_none import AddDefaultNoneCommand
                 bar: Optional[str] = None
         """,
             id="optional",
+        ),
+        pytest.param(
+            """
+            from typing import Dict
+
+            from pydantic import BaseModel
+
+
+            class Foo(BaseModel):
+                bar: Dict[str, str]
+            """,
+            """
+            from typing import Dict
+
+            from pydantic import BaseModel
+
+
+            class Foo(BaseModel):
+                bar: Dict[str, str]
+            """,
+            id="dict",
         ),
         pytest.param(
             """
@@ -69,6 +92,26 @@ from bump_pydantic.commands.add_default_none import AddDefaultNoneCommand
                     bar: str | None = None
             """,
             id="pipe optional",
+        ),
+        pytest.param(
+            """
+                from typing import Optional
+
+                from pydantic import BaseModel
+
+                class Foo(BaseModel):
+                    bar: str | None | int
+            """,
+            """
+                from typing import Optional
+
+                from pydantic import BaseModel
+
+                class Foo(BaseModel):
+                    bar: str | None | int = None
+            """,
+            id="multi pipe optional",
+            marks=pytest.mark.skip(reason="Not implemented"),
         ),
         pytest.param(
             """

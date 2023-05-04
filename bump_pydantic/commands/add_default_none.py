@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import libcst as cst
+import libcst.matchers as m
 from libcst._nodes.statement import AnnAssign, ClassDef
 from libcst.codemod import CodemodContext, VisitorBasedCodemodCommand
 from libcst_mypy import MypyTypeInferenceProvider
 from mypy.nodes import TypeInfo
+
 
 class AddDefaultNoneCommand(VisitorBasedCodemodCommand):
     """This codemod adds the default value `None` to all fields of a pydantic model that
@@ -32,8 +34,10 @@ class AddDefaultNoneCommand(VisitorBasedCodemodCommand):
 
     def __init__(self, context: CodemodContext, class_name: str) -> None:
         super().__init__(context)
-        self.inside_base_model = False
         self.class_name = class_name
+
+        self.inside_base_model = False
+        self.should_add_none = False
 
     def visit_ClassDef(self, node: ClassDef) -> None:
         for base in node.bases:
@@ -59,11 +63,40 @@ class AddDefaultNoneCommand(VisitorBasedCodemodCommand):
         self.inside_base_model = False
         return updated_node
 
+    def visit_AnnAssign(self, node: AnnAssign) -> bool | None:
+        if m.matches(
+            node.annotation.annotation,
+            m.Subscript(
+                m.Name("Optional") | m.Attribute(m.Name("typing"), m.Name("Optional"))
+            )
+            | m.Subscript(
+                m.Name("Union") | m.Attribute(m.Name("typing"), m.Name("Union")),
+                slice=[
+                    m.ZeroOrMore(),
+                    m.SubscriptElement(slice=m.Index(m.Name("None"))),
+                    m.ZeroOrMore(),
+                ],
+            )
+            | m.Name("Any")
+            | m.Attribute(m.Name("typing"), m.Name("Any"))
+            # TODO: This can be recursive.
+            | m.BinaryOperation(operator=m.BitOr(), left=m.Name("None"))
+            | m.BinaryOperation(operator=m.BitOr(), right=m.Name("None")),
+        ):
+            self.should_add_none = True
+        return super().visit_AnnAssign(node)
+
     def leave_AnnAssign(
         self, original_node: AnnAssign, updated_node: AnnAssign
     ) -> AnnAssign:
-        if self.inside_base_model and updated_node.value is None:
+        if (
+            self.inside_base_model
+            and self.should_add_none
+            and updated_node.value is None
+        ):
             updated_node = updated_node.with_changes(value=cst.Name("None"))
+        self.inside_an_assign = False
+        self.should_add_none = False
         return updated_node
 
 

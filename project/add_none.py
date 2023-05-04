@@ -1,5 +1,6 @@
+from typing import Any, Dict, Optional, Union
+
 from pydantic import BaseModel
-from typing import Optional, Union, Any
 
 
 class A(BaseModel):
@@ -7,3 +8,4 @@ class A(BaseModel):
     b: Optional[int]
     c: Union[int, None]
     d: Any
+    e: Dict[str, str]
