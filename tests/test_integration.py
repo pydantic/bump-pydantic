@@ -36,7 +36,7 @@ def test_integration(tmp_path: Path) -> None:
         # NOTE: Add `None` to the fields.
         IsAnyStr(regex=".*/project/add_none.py"),
         IsAnyStr(regex=".*/project/add_none.py"),
-        "@@ -3,7 +3,7 @@",
+        "@@ -4,8 +4,8 @@",
         " ",
         " ",
         " class A(BaseModel):",
@@ -48,6 +48,7 @@ def test_integration(tmp_path: Path) -> None:
         "+    b: Optional[int] = None",
         "+    c: Union[int, None] = None",
         "+    d: Any = None",
+        '     e: Dict[str, str]',
         "You'll need to manually replace the `Config` class to the `model_config` attribute.",
         IsAnyStr(),
         # NOTE: Rename `Config` class to `model_config` attribute.
