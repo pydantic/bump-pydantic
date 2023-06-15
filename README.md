@@ -1,31 +1,19 @@
-# bump-pydantic
+# Bump Pydantic ♻️
 
-[![PyPI - Version](https://img.shields.io/pypi/v/bump-pydantic.svg)](https://pypi.org/project/bump-pydantic)
-[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/bump-pydantic.svg)](https://pypi.org/project/bump-pydantic)
+<!-- [![PyPI - Version](https://img.shields.io/pypi/v/bump-pydantic.svg)](https://pypi.org/project/bump-pydantic)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/bump-pydantic.svg)](https://pypi.org/project/bump-pydantic) -->
+
+Utility to bump pydantic from V1 to V2.
 
 -----
 
-**Table of Contents**
+### Rules
 
-- [bump-pydantic](#bump-pydantic)
-  - [Installation](#installation)
-  - [Usage](#usage)
-  - [License](#license)
+#### BP001: Replace imports
 
-## Installation
+- ✅ Replace `BaseSettings` from `pydantic` to `pydantic_settings`.
+- ✅ Replace `Color` and `PaymentCardNumber` from `pydantic` to `pydantic_extra_types`.
 
-```console
-pip install bump-pydantic
-```
+#### BP003: Replace `BaseModel` methods
 
-## Usage
-
-You can run `bump-pydantic` from the command line:
-
-```console
-bump-pydantic <FILES>
-```
-
-## License
-
-`bump-pydantic` is distributed under the terms of the [MIT](https://spdx.org/licenses/MIT.html) license.
+#### BP002: Replace `Config` class by `model_config`
