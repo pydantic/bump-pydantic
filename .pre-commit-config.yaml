@@ -12,19 +12,7 @@ repos:
   hooks:
   - id: lint
     name: Lint
-    entry: ruff
-    args:
-    - --fix
+    entry: hatch run lint
     types: [python]
     language: system
-  - id: mypy
-    name: Mypy
-    entry: mypy
-    types: [python]
-    language: system
-    # pass_filenames: false
-  - id: pyupgrade
-    name: Pyupgrade
-    entry: pyupgrade --py37-plus
-    types: [python]
-    language: system
+    pass_filenames: false

@@ -76,9 +76,7 @@ DEPRECATED_METHODS = {
 }
 
 MATCH_DEPRECATED_METHODS = m.Call(
-    func=m.Attribute(
-        attr=m.Name(value=m.MatchIfTrue(lambda value: value in DEPRECATED_METHODS))
-    )
+    func=m.Attribute(attr=m.Name(value=m.MatchIfTrue(lambda value: value in DEPRECATED_METHODS)))
 )
 
 
@@ -96,9 +94,7 @@ class ReplaceMethodsCodemod(VisitorBasedCodemodCommand):
     # TODO: Add a warning in case you find a method that matches the rules, but it's not
     # identified as a BaseModel instance.
     @m.leave(MATCH_DEPRECATED_METHODS)
-    def leave_deprecated_methods(
-        self, original_node: cst.Call, updated_node: cst.Call
-    ) -> cst.Call:
+    def leave_deprecated_methods(self, original_node: cst.Call, updated_node: cst.Call) -> cst.Call:
         self.get_metadata(QualifiedNameProvider, original_node)
         # print("hi")
         self.get_metadata(ScopeProvider, original_node)

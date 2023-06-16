@@ -56,18 +56,14 @@ class AddDefaultNoneCommand(VisitorBasedCodemodCommand):
         if fqn.name in self.context.scratch[BASE_MODEL_CONTEXT_KEY]:
             self.inside_base_model = True
 
-    def leave_ClassDef(
-        self, original_node: cst.ClassDef, updated_node: cst.ClassDef
-    ) -> cst.ClassDef:
+    def leave_ClassDef(self, original_node: cst.ClassDef, updated_node: cst.ClassDef) -> cst.ClassDef:
         self.inside_base_model = False
         return updated_node
 
     def visit_AnnAssign(self, node: cst.AnnAssign) -> bool | None:
         if m.matches(
             node.annotation.annotation,
-            m.Subscript(
-                m.Name("Optional") | m.Attribute(m.Name("typing"), m.Name("Optional"))
-            )
+            m.Subscript(m.Name("Optional") | m.Attribute(m.Name("typing"), m.Name("Optional")))
             | m.Subscript(
                 m.Name("Union") | m.Attribute(m.Name("typing"), m.Name("Union")),
                 slice=[
@@ -85,14 +81,8 @@ class AddDefaultNoneCommand(VisitorBasedCodemodCommand):
             self.should_add_none = True
         return super().visit_AnnAssign(node)
 
-    def leave_AnnAssign(
-        self, original_node: cst.AnnAssign, updated_node: cst.AnnAssign
-    ) -> cst.AnnAssign:
-        if (
-            self.inside_base_model
-            and self.should_add_none
-            and updated_node.value is None
-        ):
+    def leave_AnnAssign(self, original_node: cst.AnnAssign, updated_node: cst.AnnAssign) -> cst.AnnAssign:
+        if self.inside_base_model and self.should_add_none and updated_node.value is None:
             updated_node = updated_node.with_changes(value=cst.Name("None"))
         self.inside_an_assign = False
         self.should_add_none = False

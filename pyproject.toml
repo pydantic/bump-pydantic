@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "bump-pydantic"
 dynamic = ["version"]
-description = ''
+description = "Convert Pydantic from V1 to V2 ♻"
 readme = "README.md"
 requires-python = ">=3.8"
 license = "MIT"
@@ -22,7 +22,7 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: PyPy",
   "Framework :: Pydantic",
 ]
-dependencies = ["typer>=0.7.0", "rich>=13.3.4"]
+dependencies = ["typer>=0.7.0", "libcst"]
 
 [project.urls]
 Documentation = "https://github.com/pydantic/bump-pydantic#readme"
@@ -43,6 +43,9 @@ dependencies = [
   "pydantic",
   "pytest-xdist",
   "rtoml",
+  "black>=23.1.0",
+  "mypy>=1.0.0",
+  "ruff>=0.0.243",
 ]
 
 [tool.hatch.envs.default.scripts]
@@ -50,19 +53,15 @@ test = "pytest {args:tests}"
 test-cov = "coverage run -m pytest {args:tests}"
 cov-report = ["- coverage combine", "coverage report"]
 cov = ["test-cov", "cov-report"]
+lint = [
+  "ruff {args:.}",
+  "black --check --diff {args:.}",
+  "mypy {args:bump_pydantic tests}",
+]
+format = ["black {args:.}", "ruff --fix {args:.}"]
 
 [[tool.hatch.envs.all.matrix]]
 python = ["3.8", "3.9", "3.10", "3.11"]
-
-[tool.hatch.envs.lint]
-detached = true
-dependencies = ["black>=23.1.0", "mypy>=1.0.0", "ruff>=0.0.243"]
-
-[tool.hatch.envs.lint.scripts]
-typing = "mypy --install-types --non-interactive {args:bump_pydantic tests}"
-style = ["ruff {args:.}", "black --check --diff {args:.}"]
-fmt = ["black {args:.}", "ruff --fix {args:.}", "style"]
-all = ["style", "typing"]
 
 [tool.black]
 target-version = ["py38"]
@@ -87,3 +86,4 @@ exclude_lines = ["no cov", "if __name__ == .__main__.:", "if TYPE_CHECKING:"]
 
 [tool.coverage.paths]
 source = ["bump_pydantic/"]
+detached = true

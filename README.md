@@ -34,4 +34,25 @@ class User(BaseModel):
 
 #### BP003: Replace `Config` class by `model_config`
 
+- ✅ Replace `Config` class by `model_config = ConfigDict()`.
+
+The following code will be transformed:
+
+```py
+class User(BaseModel):
+    name: str
+
+    class Config:
+        extra = 'forbid'
+```
+
+Into:
+
+```py
+class User(BaseModel):
+    name: str
+
+    model_config = ConfigDict(extra='forbid')
+```
+
 #### BP004: Replace `BaseModel` methods

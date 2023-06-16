@@ -18,9 +18,9 @@ class TestClassDefVisitor(UnitTest):
         mod = MetadataWrapper(
             parse_module(CodemodTest.make_fixture_data(code)),
             cache={
-                FullyQualifiedNameProvider: FullyQualifiedNameProvider.gen_cache(
-                    Path(""), [file_path], None
-                ).get(file_path, "")
+                FullyQualifiedNameProvider: FullyQualifiedNameProvider.gen_cache(Path(""), [file_path], None).get(
+                    file_path, ""
+                )
             },
         )
         mod.resolve_many(AddDefaultNoneCommand.METADATA_DEPENDENCIES)
@@ -30,7 +30,7 @@ class TestClassDefVisitor(UnitTest):
 
         find_base_model(context=context)
 
-        instance = AddDefaultNoneCommand(context=context)
+        instance = AddDefaultNoneCommand(context=context)  # type: ignore[assignment]
         return mod.visit(instance)
 
     def test_no_annotations(self) -> None:

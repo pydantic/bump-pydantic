@@ -3,6 +3,7 @@ import os
 import sys
 import time
 from pathlib import Path
+from typing import Any, Dict
 
 import libcst as cst
 from libcst.codemod import CodemodContext
@@ -36,14 +37,14 @@ def main(
     version: bool = Option(None, "--version", callback=version_callback, is_eager=True),
 ):
     cwd = os.getcwd()
-    files = [path.absolute() for path in package.glob("**/*.py")]
-    files = [str(file.relative_to(cwd)) for file in files]
+    files_str = [path.absolute() for path in package.glob("**/*.py")]
+    files = [str(file.relative_to(cwd)) for file in files_str]
 
     providers = {ScopeProvider, PositionProvider, FullyQualifiedNameProvider}
-    metadata_manager = FullRepoManager(cwd, files, providers=providers)
+    metadata_manager = FullRepoManager(cwd, files, providers=providers)  # type: ignore[arg-type]
     metadata_manager.resolve_cache()
 
-    scratch = {}
+    scratch: Dict[str, Any] = {}
     for filename in files:
         code = Path(filename).read_text()
         module = cst.parse_module(code)

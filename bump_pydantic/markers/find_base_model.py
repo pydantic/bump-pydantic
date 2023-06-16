@@ -9,9 +9,7 @@ from bump_pydantic.codemods.class_def_visitor import ClassDefVisitor
 CONTEXT_KEY = "find_base_model"
 
 
-def revert_dictionary(
-    classes: defaultdict[str, set[str]]
-) -> defaultdict[str, set[str]]:
+def revert_dictionary(classes: defaultdict[str, set[str]]) -> defaultdict[str, set[str]]:
     revert_classes: defaultdict[str, set[str]] = defaultdict(set)
     for cls, bases in classes.copy().items():
         for base in bases:
