@@ -129,7 +129,7 @@ class ReplaceConfigCodemod(VisitorBasedCodemodCommand):
         from `Config` class.
         """
         AddImportsVisitor.add_needed_import(context=self.context, module="pydantic", obj="ConfigDict")
-        block = cst.ensure_type(original_node.body, cst.IndentedBlock)
+        block = cst.ensure_type(updated_node.body, cst.IndentedBlock)
         body = [
             cst.SimpleStatementLine(
                 body=[

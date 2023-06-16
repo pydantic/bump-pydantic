@@ -61,7 +61,8 @@ def main(
         visitor.transform_module(module)
         scratch = context.scratch
 
-    find_base_model(scratch["classes"])
+    find_base_model(context=context)  # type: ignore[assignment]
+    scratch = context.scratch  # type: ignore[assignment]
 
     start_time = time.time()
 
@@ -78,6 +79,7 @@ def main(
                     filename=filename,
                     full_module_name=module_and_package.name,
                     full_package_name=module_and_package.package,
+                    scratch=scratch,
                 )
             )
 
