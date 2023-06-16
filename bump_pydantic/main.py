@@ -1,21 +1,24 @@
-from typer import Argument, Option, Typer, echo, Exit
-import time
-import sys
 import difflib
-import libcst as cst
-from libcst.helpers import calculate_module_and_package
-from libcst.codemod import CodemodContext
 import os
+import sys
+import time
+from pathlib import Path
+
+import libcst as cst
+from libcst.codemod import CodemodContext
+from libcst.helpers import calculate_module_and_package
 from libcst.metadata import (
     FullRepoManager,
+    FullyQualifiedNameProvider,
     PositionProvider,
     ScopeProvider,
-    FullyQualifiedNameProvider,
 )
-from pathlib import Path
+from typer import Argument, Exit, Option, Typer, echo
+
+from bump_pydantic import __version__
 from bump_pydantic.codemods import gather_codemods
 from bump_pydantic.codemods.class_def_visitor import ClassDefVisitor
-from bump_pydantic import __version__
+from bump_pydantic.markers.find_base_model import find_base_model
 
 app = Typer(help="Convert Pydantic from V1 to V2 ♻️", invoke_without_command=True)
 
@@ -29,8 +32,8 @@ def version_callback(value: bool):
 @app.callback()
 def main(
     package: Path = Argument(..., exists=True, dir_okay=True, allow_dash=False),
-    version: bool = Option(None, "--version", callback=version_callback, is_eager=True),
     diff: bool = Option(False, help="Show diff instead of applying changes."),
+    version: bool = Option(None, "--version", callback=version_callback, is_eager=True),
 ):
     cwd = os.getcwd()
     files = [path.absolute() for path in package.glob("**/*.py")]
@@ -56,6 +59,8 @@ def main(
         visitor = ClassDefVisitor(context=context)
         visitor.transform_module(module)
         scratch = context.scratch
+
+    find_base_model(scratch["classes"])
 
     start_time = time.time()
 

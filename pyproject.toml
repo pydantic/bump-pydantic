@@ -70,60 +70,11 @@ skip-string-normalization = true
 line-length = 120
 
 [tool.ruff]
-target-version = "py38"
 line-length = 120
-select = [
-  "A",
-  "ARG",
-  "B",
-  "C",
-  "DTZ",
-  "E",
-  "F",
-  "I",
-  "ICN",
-  "ISC",
-  "PLC",
-  "PLE",
-  "PLR",
-  "PLW",
-  "RUF",
-  "S",
-  "T",
-  "TID",
-  "UP",
-  "W",
-  "YTT",
-]
-ignore = [
-  # Allow non-abstract empty methods in abstract base classes
-  "B027",
-  "B008",
-  # Ignore checks for possible passwords
-  "S105",
-  "S106",
-  "S107",
-  # Ignore complexity
-  "C901",
-  "PLR0911",
-  "PLR0912",
-  "PLR0913",
-  "PLR0915",
-]
-unfixable = [
-  # Don't touch unused imports
-  "F401",
-]
-
-[tool.ruff.isort]
-known-first-party = ["bump_pydantic"]
-
-[tool.ruff.flake8-tidy-imports]
-ban-relative-imports = "all"
-
-[tool.ruff.per-file-ignores]
-# Tests can use magic values, assertions, and relative imports
-"tests/**/*" = ["PLR2004", "S101", "TID252"]
+extend-select = ['Q', 'RUF100', 'C90', 'UP', 'I']
+mccabe = { max-complexity = 14 }
+isort = { known-first-party = ['bump_pydantic', 'tests'] }
+target-version = 'py38'
 
 [tool.coverage.run]
 source_pkgs = ["bump_pydantic", "tests"]
@@ -135,5 +86,4 @@ skip_covered = true
 exclude_lines = ["no cov", "if __name__ == .__main__.:", "if TYPE_CHECKING:"]
 
 [tool.coverage.paths]
-bump_pydantic = ["bump_pydantic", "*/bump-pydantic/bump_pydantic"]
-tests = ["tests", "*/bump-pydantic/tests"]
+source = ["bump_pydantic/"]

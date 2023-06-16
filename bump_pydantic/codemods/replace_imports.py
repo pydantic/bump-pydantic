@@ -8,14 +8,14 @@ This codemod deals with the following cases:
 5. `import pydantic` -> `pydantic.BaseSettings`
 """
 from __future__ import annotations
+
 from dataclasses import dataclass
-from typing import Sequence, List, Union, Tuple
+from typing import Sequence
 
 import libcst as cst
-from libcst.codemod.visitors import AddImportsVisitor
 import libcst.matchers as m
 from libcst.codemod import CodemodContext, VisitorBasedCodemodCommand
-
+from libcst.codemod.visitors import AddImportsVisitor
 
 IMPORTS = {
     "pydantic:BaseSettings": ("pydantic_settings", "BaseSettings"),
@@ -34,7 +34,7 @@ IMPORTS = {
 }
 
 
-def resolve_module_parts(module_parts: List[str]) -> Union[m.Attribute, m.Name]:
+def resolve_module_parts(module_parts: list[str]) -> m.Attribute | m.Name:
     if len(module_parts) == 1:
         return m.Name(module_parts[0])
     if len(module_parts) == 2:
@@ -80,7 +80,7 @@ def get_import_from_from_str(import_str: str) -> m.ImportFrom:
 class ImportInfo:
     import_from: m.ImportFrom
     import_str: str
-    to_import_str: Tuple[str, str]
+    to_import_str: tuple[str, str]
 
 
 IMPORT_INFOS = [
@@ -115,7 +115,7 @@ class ReplaceImportsCodemod(VisitorBasedCodemodCommand):
                     ]
                     updated_node = updated_node.with_changes(names=names)
                 else:
-                    return cst.RemoveFromParent()
+                    return cst.RemoveFromParent()  # type: ignore[return-value]
         return updated_node
 
 
@@ -150,8 +150,9 @@ if __name__ == "__main__":
     wrapper = cst.MetadataWrapper(mod)
     command = ReplaceImportsCodemod(context=context)
     console.print(mod)
+
     mod = wrapper.visit(command)
     wrapper = cst.MetadataWrapper(mod)
-    command = AddImportsVisitor(context=context)
+    command = AddImportsVisitor(context=context)  # type: ignore[assignment]
     mod = wrapper.visit(command)
     console.print(mod.code)

@@ -1,15 +1,10 @@
 from __future__ import annotations
-from rich.pretty import pprint
+
 from collections import defaultdict
-from typing import Optional, Set
 
 import libcst as cst
-from libcst._nodes.expression import Name
-from libcst._nodes.module import Module
-from libcst._nodes.statement import ImportFrom
-from libcst.metadata import FullyQualifiedNameProvider, QualifiedName
-import libcst.matchers as m
 from libcst.codemod import CodemodContext, VisitorBasedCodemodCommand
+from libcst.metadata import FullyQualifiedNameProvider, QualifiedName
 
 
 class ClassDefVisitor(VisitorBasedCodemodCommand):
