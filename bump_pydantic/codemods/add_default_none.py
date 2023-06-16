@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import libcst as cst
 import libcst.matchers as m
-from libcst._nodes.statement import AnnAssign, ClassDef
 from libcst.codemod import CodemodContext, VisitorBasedCodemodCommand
-from libcst_mypy import MypyTypeInferenceProvider
-from mypy.nodes import TypeInfo
+from libcst.metadata import FullyQualifiedNameProvider, QualifiedName
+
+from bump_pydantic.codemods.class_def_visitor import ClassDefVisitor
+from bump_pydantic.markers.find_base_model import CONTEXT_KEY as BASE_MODEL_CONTEXT_KEY
+from bump_pydantic.markers.find_base_model import find_base_model
 
 
 class AddDefaultNoneCommand(VisitorBasedCodemodCommand):
@@ -14,61 +16,54 @@ class AddDefaultNoneCommand(VisitorBasedCodemodCommand):
 
     Example::
         # Before
+        ```py
         from pydantic import BaseModel
 
         class Foo(BaseModel):
             bar: Optional[str]
             baz: Union[str, None]
             qux: Any
+        ```
 
         # After
+        ```py
         from pydantic import BaseModel
 
         class Foo(BaseModel):
             bar: Optional[str] = None
             baz: Union[str, None] = None
             qux: Any = None
+        ```
     """
 
-    METADATA_DEPENDENCIES = (MypyTypeInferenceProvider,)
+    METADATA_DEPENDENCIES = {
+        FullyQualifiedNameProvider,
+    }
 
-    def __init__(self, context: CodemodContext, class_name: str) -> None:
+    def __init__(self, context: CodemodContext) -> None:
         super().__init__(context)
-        self.class_name = class_name
 
         self.inside_base_model = False
         self.should_add_none = False
 
-    def visit_ClassDef(self, node: ClassDef) -> None:
-        for base in node.bases:
-            scope = self.get_metadata(MypyTypeInferenceProvider, base.value, None)
-            if scope is not None and isinstance(scope.mypy_type, TypeInfo):
-                self.inside_base_model = self._is_class_name_base_of_type_info(
-                    self.class_name, scope.mypy_type
-                )
+    def visit_ClassDef(self, node: cst.ClassDef) -> None:
+        fqn_set = self.get_metadata(FullyQualifiedNameProvider, node)
 
-    def _is_class_name_base_of_type_info(
-        self, class_name: str, type_info: TypeInfo
-    ) -> bool:
-        if type_info.fullname == class_name:
-            return True
-        return any(
-            self._is_class_name_base_of_type_info(class_name, base.type)
-            for base in type_info.bases
-        )
+        if not fqn_set:
+            return None
 
-    def leave_ClassDef(
-        self, original_node: ClassDef, updated_node: ClassDef
-    ) -> ClassDef:
+        fqn: QualifiedName = next(iter(fqn_set))  # type: ignore
+        if fqn.name in self.context.scratch[BASE_MODEL_CONTEXT_KEY]:
+            self.inside_base_model = True
+
+    def leave_ClassDef(self, original_node: cst.ClassDef, updated_node: cst.ClassDef) -> cst.ClassDef:
         self.inside_base_model = False
         return updated_node
 
-    def visit_AnnAssign(self, node: AnnAssign) -> bool | None:
+    def visit_AnnAssign(self, node: cst.AnnAssign) -> bool | None:
         if m.matches(
             node.annotation.annotation,
-            m.Subscript(
-                m.Name("Optional") | m.Attribute(m.Name("typing"), m.Name("Optional"))
-            )
+            m.Subscript(m.Name("Optional") | m.Attribute(m.Name("typing"), m.Name("Optional")))
             | m.Subscript(
                 m.Name("Union") | m.Attribute(m.Name("typing"), m.Name("Union")),
                 slice=[
@@ -79,21 +74,15 @@ class AddDefaultNoneCommand(VisitorBasedCodemodCommand):
             )
             | m.Name("Any")
             | m.Attribute(m.Name("typing"), m.Name("Any"))
-            # TODO: This can be recursive.
+            # TODO: This can be recursive. Can it?
             | m.BinaryOperation(operator=m.BitOr(), left=m.Name("None"))
             | m.BinaryOperation(operator=m.BitOr(), right=m.Name("None")),
         ):
             self.should_add_none = True
         return super().visit_AnnAssign(node)
 
-    def leave_AnnAssign(
-        self, original_node: AnnAssign, updated_node: AnnAssign
-    ) -> AnnAssign:
-        if (
-            self.inside_base_model
-            and self.should_add_none
-            and updated_node.value is None
-        ):
+    def leave_AnnAssign(self, original_node: cst.AnnAssign, updated_node: cst.AnnAssign) -> cst.AnnAssign:
+        if self.inside_base_model and self.should_add_none and updated_node.value is None:
             updated_node = updated_node.with_changes(value=cst.Name("None"))
         self.inside_an_assign = False
         self.should_add_none = False
@@ -103,11 +92,13 @@ class AddDefaultNoneCommand(VisitorBasedCodemodCommand):
 if __name__ == "__main__":
     import os
     import textwrap
+    from pathlib import Path
     from tempfile import TemporaryDirectory
 
     from libcst.metadata import FullRepoManager
+    from rich.pretty import pprint
 
-    with TemporaryDirectory() as tmpdir:
+    with TemporaryDirectory(dir=os.getcwd()) as tmpdir:
         package_dir = f"{tmpdir}/package"
         os.mkdir(package_dir)
         module_path = f"{package_dir}/a.py"
@@ -117,22 +108,29 @@ if __name__ == "__main__":
                 from pydantic import BaseModel
 
                 class Foo(BaseModel):
-                    bar: Optional[str]
-                    baz: Union[str, None]
-                    qux: Any
+                    a: Optional[str]
+
+                class Bar(Foo):
+                    b: Optional[str]
+                    c: Union[str, None]
+                    d: Any
+
+                foo = Foo(a="text")
+                foo.dict()
             """
             )
-            print(content)
-            print("=" * 80)
             f.write(content)
-            f.seek(0)
-            module = cst.parse_module(content)
-        mrg = FullRepoManager(
-            package_dir, {module_path}, providers={MypyTypeInferenceProvider}
-        )
-        wrapper = mrg.get_metadata_wrapper_for_path(module_path)
+        module = str(Path(module_path).relative_to(tmpdir))
+        mrg = FullRepoManager(tmpdir, {module}, providers={FullyQualifiedNameProvider})
+        wrapper = mrg.get_metadata_wrapper_for_path(module)
         context = CodemodContext(wrapper=wrapper)
-        command = AddDefaultNoneCommand(
-            context=context, class_name="pydantic.main.BaseModel"
-        )
-        print(wrapper.visit(command).code)
+
+        command = ClassDefVisitor(context=context)
+        mod = wrapper.visit(command)
+
+        find_base_model(context=context)
+        pprint(context.scratch)
+
+        command = AddDefaultNoneCommand(context=context)  # type: ignore[assignment]
+        mod = wrapper.visit(command)
+        print(mod.code)

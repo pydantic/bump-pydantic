@@ -1,31 +1,58 @@
-# bump-pydantic
+# Bump Pydantic ♻️
 
-[![PyPI - Version](https://img.shields.io/pypi/v/bump-pydantic.svg)](https://pypi.org/project/bump-pydantic)
-[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/bump-pydantic.svg)](https://pypi.org/project/bump-pydantic)
+<!-- [![PyPI - Version](https://img.shields.io/pypi/v/bump-pydantic.svg)](https://pypi.org/project/bump-pydantic)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/bump-pydantic.svg)](https://pypi.org/project/bump-pydantic) -->
+
+Utility to bump pydantic from V1 to V2.
 
 -----
 
-**Table of Contents**
+### Rules
 
-- [bump-pydantic](#bump-pydantic)
-  - [Installation](#installation)
-  - [Usage](#usage)
-  - [License](#license)
+#### BP001: Replace imports
 
-## Installation
+- ✅ Replace `BaseSettings` from `pydantic` to `pydantic_settings`.
+- ✅ Replace `Color` and `PaymentCardNumber` from `pydantic` to `pydantic_extra_types`.
 
-```console
-pip install bump-pydantic
+#### BP002: Add default `None` to `Optional[T]`, `Union[T, None]` and `Any` fields
+
+- ✅ Add default `None` to `Optional[T]` fields.
+
+The following code will be transformed:
+
+```py
+class User(BaseModel):
+    name: Optional[str]
 ```
 
-## Usage
+Into:
 
-You can run `bump-pydantic` from the command line:
-
-```console
-bump-pydantic <FILES>
+```py
+class User(BaseModel):
+    name: Optional[str] = None
 ```
 
-## License
+#### BP003: Replace `Config` class by `model_config`
 
-`bump-pydantic` is distributed under the terms of the [MIT](https://spdx.org/licenses/MIT.html) license.
+- ✅ Replace `Config` class by `model_config = ConfigDict()`.
+
+The following code will be transformed:
+
+```py
+class User(BaseModel):
+    name: str
+
+    class Config:
+        extra = 'forbid'
+```
+
+Into:
+
+```py
+class User(BaseModel):
+    name: str
+
+    model_config = ConfigDict(extra='forbid')
+```
+
+#### BP004: Replace `BaseModel` methods
