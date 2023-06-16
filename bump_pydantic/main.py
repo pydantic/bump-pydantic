@@ -73,15 +73,15 @@ def main(
     for codemod in codemods:
         for filename in files:
             module_and_package = calculate_module_and_package(str(package), filename)
-            transformer = codemod(
-                CodemodContext(
-                    metadata_manager=metadata_manager,
-                    filename=filename,
-                    full_module_name=module_and_package.name,
-                    full_package_name=module_and_package.package,
-                    scratch=scratch,
-                )
+            context = CodemodContext(
+                metadata_manager=metadata_manager,
+                filename=filename,
+                full_module_name=module_and_package.name,
+                full_package_name=module_and_package.package,
             )
+            context.scratch.update(scratch)
+
+            transformer = codemod(context=context)
 
             old_code = Path(filename).read_text()
             input_tree = cst.parse_module(old_code)
