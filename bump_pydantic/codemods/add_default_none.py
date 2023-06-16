@@ -36,9 +36,7 @@ class AddDefaultNoneCommand(VisitorBasedCodemodCommand):
         ```
     """
 
-    METADATA_DEPENDENCIES = {
-        FullyQualifiedNameProvider,
-    }
+    METADATA_DEPENDENCIES = (FullyQualifiedNameProvider,)
 
     def __init__(self, context: CodemodContext) -> None:
         super().__init__(context)
