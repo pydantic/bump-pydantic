@@ -40,3 +40,30 @@ class TestReplaceConfigCommand(CodemodTest):
             allow_arbitrary_types = True
         """
         self.assertCodemod(code, code)
+
+    def test_reset_config_args(self) -> None:
+        before = """
+        from pydantic import BaseModel
+
+        class Potato(BaseModel):
+            class Config:
+                allow_arbitrary_types = True
+
+        potato = Potato()
+
+        class Potato2(BaseModel):
+            class Config:
+                allow_mutation = True
+        """
+        after = """
+        from pydantic import ConfigDict, BaseModel
+
+        class Potato(BaseModel):
+            model_config = ConfigDict(allow_arbitrary_types=True)
+
+        potato = Potato()
+
+        class Potato2(BaseModel):
+            model_config = ConfigDict(allow_mutation=True)
+        """
+        self.assertCodemod(before, after)
