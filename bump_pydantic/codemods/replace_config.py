@@ -90,16 +90,17 @@ class ReplaceConfigCodemod(VisitorBasedCodemodCommand):
         self.assign_value = node.value
 
     def visit_AssignTarget(self, node: cst.AssignTarget) -> None:
-        self.config_args.append(
-            cst.Arg(
-                keyword=node.target,  # type: ignore[arg-type]
-                value=self.assign_value,
-                equal=cst.AssignEqual(
-                    whitespace_before=cst.SimpleWhitespace(""),
-                    whitespace_after=cst.SimpleWhitespace(""),
-                ),
+        if self.inside_config_class:
+            self.config_args.append(
+                cst.Arg(
+                    keyword=node.target,  # type: ignore[arg-type]
+                    value=self.assign_value,
+                    equal=cst.AssignEqual(
+                        whitespace_before=cst.SimpleWhitespace(""),
+                        whitespace_after=cst.SimpleWhitespace(""),
+                    ),
+                )
             )
-        )
 
     def leave_Module(self, original_node: Module, updated_node: Module) -> Module:
         return updated_node
