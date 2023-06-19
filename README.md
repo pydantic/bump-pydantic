@@ -56,3 +56,32 @@ class User(BaseModel):
 ```
 
 #### BP004: Replace `BaseModel` methods
+
+
+#### BP005: Replace `GenericModel` by `BaseModel`
+
+- ✅ Replace `GenericModel` by `BaseModel`.
+
+The following code will be transformed:
+
+```py
+from typing import Generic, TypeVar
+from pydantic.generics import GenericModel
+
+T = TypeVar('T')
+
+class User(GenericModel, Generic[T]):
+    name: str
+```
+
+Into:
+
+```py
+from typing import Generic, TypeVar
+from pydantic.generics import GenericModel
+
+T = TypeVar('T')
+
+class User(BaseModel, Generic[T]):
+    name: str
+```
