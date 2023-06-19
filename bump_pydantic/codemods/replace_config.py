@@ -34,7 +34,7 @@ RENAMED_KEYS = {
 }
 # TODO: The codemod should not replace `Config` in case of removed keys, right?
 
-base_model_with_config = m.ClassDef(
+BASE_MODEL_WITH_CONFIG = m.ClassDef(
     bases=[
         m.ZeroOrMore(),
         m.Arg(),
@@ -48,7 +48,7 @@ base_model_with_config = m.ClassDef(
         ]
     ),
 )
-base_model_with_config_child = m.ClassDef(
+BASE_MODEL_WITH_INHERITED_CONFIG = m.ClassDef(
     bases=[
         m.ZeroOrMore(),
         m.Arg(),
@@ -62,6 +62,42 @@ base_model_with_config_child = m.ClassDef(
         ]
     ),
 )
+BASE_MODEL_WITH_INVALID_CONFIG = m.ClassDef(
+    bases=[
+        m.ZeroOrMore(),
+        m.Arg(),
+        m.ZeroOrMore(),
+    ],
+    body=m.IndentedBlock(
+        body=[
+            m.ZeroOrMore(),
+            m.ClassDef(
+                name=m.Name(value="Config"),
+                bases=[],
+                body=m.IndentedBlock(
+                    body=[
+                        m.ZeroOrMore(),
+                        m.AtLeastN(n=1, matcher=~m.SimpleStatementLine()),
+                        m.ZeroOrMore(),
+                    ]
+                ),
+            ),
+            m.ZeroOrMore(),
+        ]
+    ),
+)
+"""
+This matches a `Config` class with at least one NON `m.SimpleStatementLine`:
+
+Example:
+```
+class Config:
+    allow_mutation = True
+
+    def potato():
+        ...
+```
+"""
 
 
 class ReplaceConfigCodemod(VisitorBasedCodemodCommand):
@@ -73,7 +109,8 @@ class ReplaceConfigCodemod(VisitorBasedCodemodCommand):
         super().__init__(context)
 
         self.inside_config_class = False
-
+        self.invalid_config_class = False
+        self.inherited_config_class = False
         self.config_args: List[cst.Arg] = []
 
     @m.visit(m.ClassDef(name=m.Name(value="Config")))
@@ -83,10 +120,53 @@ class ReplaceConfigCodemod(VisitorBasedCodemodCommand):
     @m.leave(m.ClassDef(name=m.Name(value="Config")))
     def leave_config_class(self, original_node: cst.ClassDef, updated_node: cst.ClassDef) -> cst.ClassDef:
         self.inside_config_class = False
+        if self.invalid_config_class:
+            return updated_node.with_changes(
+                leading_lines=[
+                    *updated_node.leading_lines,
+                    cst.EmptyLine(
+                        comment=cst.Comment(
+                            value=(
+                                "# TODO[pydantic]: We couldn't refactor this class, "
+                                "please create the `model_config` manually."
+                            )
+                        )
+                    ),
+                    cst.EmptyLine(
+                        comment=cst.Comment(
+                            value=(
+                                "# Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config "
+                                "for more information."
+                            )
+                        )
+                    ),
+                ]
+            )
+        elif self.inherited_config_class:
+            return updated_node.with_changes(
+                leading_lines=[
+                    *updated_node.leading_lines,
+                    cst.EmptyLine(
+                        comment=cst.Comment(
+                            value=(
+                                "# TODO[pydantic]: The `Config` class inherits from another class, "
+                                "please create the `model_config` manually."
+                            )
+                        )
+                    ),
+                    cst.EmptyLine(
+                        comment=cst.Comment(
+                            value=(
+                                "# Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config "
+                                "for more information."
+                            )
+                        )
+                    ),
+                ]
+            )
         return updated_node
 
     def visit_Assign(self, node: cst.Assign) -> None:
-        # NOTE: There's no need for the `leave_Assign`.
         self.assign_value = node.value
 
     def visit_AssignTarget(self, node: cst.AssignTarget) -> None:
@@ -105,22 +185,20 @@ class ReplaceConfigCodemod(VisitorBasedCodemodCommand):
     def leave_Module(self, original_node: Module, updated_node: Module) -> Module:
         return updated_node
 
-    @m.leave(base_model_with_config_child)
-    def leave_config_class_child(self, original_node: cst.ClassDef, updated_node: cst.ClassDef) -> cst.ClassDef:
-        position = self.get_metadata(PositionProvider, original_node)
-        print("You'll need to manually replace the `Config` class to the `model_config` attribute.")
-        print(
-            "File: {filename}:-{start_line},{start_column}:{end_line},{end_column}".format(
-                filename=self.context.filename,
-                start_line=position.start.line,
-                start_column=position.start.column,
-                end_line=position.end.line,
-                end_column=position.end.column,
-            )
-        )
+    @m.visit(BASE_MODEL_WITH_INHERITED_CONFIG)
+    def visit_inherited_config_class(self, node: cst.ClassDef) -> None:
+        self.inherited_config_class = True
+
+    @m.leave(BASE_MODEL_WITH_INHERITED_CONFIG)
+    def leave_inherited_config_class(self, original_node: cst.ClassDef, updated_node: cst.ClassDef) -> cst.ClassDef:
+        self.inherited_config_class = False
         return updated_node
 
-    @m.leave(base_model_with_config)
+    @m.visit(BASE_MODEL_WITH_INVALID_CONFIG)
+    def visit_config_class_with_more_than_assignments(self, node: cst.ClassDef) -> None:
+        self.invalid_config_class = True
+
+    @m.leave(BASE_MODEL_WITH_CONFIG)
     def leave_config_class_childless(self, original_node: cst.ClassDef, updated_node: cst.ClassDef) -> cst.ClassDef:
         """Replace the `Config` class with a `model_config` attribute.
 
@@ -129,6 +207,9 @@ class ReplaceConfigCodemod(VisitorBasedCodemodCommand):
         assigned a `ConfigDict` object with the same arguments as the attributes
         from `Config` class.
         """
+        if self.invalid_config_class:
+            self.invalid_config_class = False
+            return updated_node
         AddImportsVisitor.add_needed_import(context=self.context, module="pydantic", obj="ConfigDict")
         block = cst.ensure_type(updated_node.body, cst.IndentedBlock)
         body = [
@@ -163,8 +244,23 @@ if __name__ == "__main__":
         from pydantic import BaseModel
 
         class A(BaseModel):
+            a: str
+            # My comment
+
+            b: int
+
+            # potato
             class Config:
-                arbitrary_types_allowed = True
+                allow_arbitrary_types = True
+                schema_extra = {
+                    "example": {
+                        "foo": "bar",
+                    }
+                }
+
+                @staticmethod
+                def indexes() -> Iterable[Index]:
+                    yield Index(DiscoverTopic.org_id, DiscoverTopic.taxonomy_id)
         """
     )
     console.print(source)
@@ -174,6 +270,7 @@ if __name__ == "__main__":
     context = CodemodContext(filename="main.py")
     wrapper = cst.MetadataWrapper(mod)
     command = ReplaceConfigCodemod(context=context)
+    console.print(mod)
 
     mod = wrapper.visit(command)
     wrapper = cst.MetadataWrapper(mod)
