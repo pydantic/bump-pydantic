@@ -76,14 +76,15 @@ isort = { known-first-party = ['bump_pydantic', 'tests'] }
 target-version = 'py38'
 
 [tool.coverage.run]
-source_pkgs = ["bump_pydantic", "tests"]
+source_pkgs = ["bump_pydantic"]
 branch = true
 
 [tool.coverage.report]
 show_missing = true
 skip_covered = true
-exclude_lines = ["no cov", "if __name__ == .__main__.:", "if TYPE_CHECKING:"]
-
-[tool.coverage.paths]
-source = ["bump_pydantic/"]
-detached = true
+exclude_lines = [
+  "pragma: nocover",
+  "pragma: no cover",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+]

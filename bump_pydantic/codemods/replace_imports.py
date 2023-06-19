@@ -141,7 +141,6 @@ if __name__ == "__main__":
     context = CodemodContext(filename="main.py")
     wrapper = cst.MetadataWrapper(mod)
     command = ReplaceImportsCodemod(context=context)
-    console.print(mod)
 
     mod = wrapper.visit(command)
     wrapper = cst.MetadataWrapper(mod)
