@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 import difflib
 import functools
 import multiprocessing
 import os
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Type
+from typing import Any
 
 import libcst as cst
 from libcst.codemod import CodemodContext, ContextAwareTransformer
@@ -46,7 +48,7 @@ def main(
     metadata_manager = FullRepoManager(".", files, providers=providers)  # type: ignore[arg-type]
     metadata_manager.resolve_cache()
 
-    scratch: Dict[str, Any] = {}
+    scratch: dict[str, Any] = {}
     for filename in files:
         code = Path(filename).read_text()
         module = cst.parse_module(code)
@@ -82,13 +84,13 @@ def main(
 
 
 def run_codemods(
-    codemods: List[Type[ContextAwareTransformer]],
+    codemods: list[type[ContextAwareTransformer]],
     metadata_manager: FullRepoManager,
-    scratch: Dict[str, Any],
+    scratch: dict[str, Any],
     package: Path,
     diff: bool,
     filename: str,
-) -> List[str] | None:
+) -> list[str] | None:
     module_and_package = calculate_module_and_package(str(package), filename)
     context = CodemodContext(
         metadata_manager=metadata_manager,
@@ -129,7 +131,7 @@ def run_codemods(
     return None
 
 
-def color_diff(console: Console, lines: List[str]) -> None:
+def color_diff(console: Console, lines: list[str]) -> None:
     for line in lines:
         line = line.rstrip("\n")
         if line.startswith("+"):
