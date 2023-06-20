@@ -1,5 +1,4 @@
-from __future__ import annotations
-
+import contextlib
 import difflib
 import functools
 import multiprocessing
@@ -7,7 +6,7 @@ import os
 import time
 from io import TextIOWrapper
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict, List, Type, Union
 
 import libcst as cst
 from libcst.codemod import CodemodContext, ContextAwareTransformer
@@ -44,7 +43,7 @@ def version_callback(value: bool):
 def main(
     package: Path = Argument(..., exists=True, dir_okay=True, allow_dash=False),
     diff: bool = Option(False, help="Show diff instead of applying changes."),
-    log_file: Path | None = Option(None, help="Log file to write to."),
+    log_file: Union[Path, None] = Option(None, help="Log file to write to."),
     version: bool = Option(None, "--version", callback=version_callback, is_eager=True),
 ):
     console = Console()
@@ -83,11 +82,12 @@ def main(
     with Progress(*Progress.get_default_columns(), transient=True) as progress:
         task = progress.add_task(description="Processing...", total=len(files))
         with multiprocessing.Pool() as pool:
-            log_fp = log_file.open("a") if log_file else None
-            for error_msg in pool.imap_unordered(partial_run_codemods, files):
-                progress.update(task, advance=1)
-                if isinstance(error_msg, list):
-                    color_diff(console, error_msg, log_fp)
+            ctx_mgr = log_file.open("a+") if log_file else contextlib.nullcontext()
+            with ctx_mgr as log_fp:  # type: ignore[attr-defined]
+                for error_msg in pool.imap_unordered(partial_run_codemods, files):
+                    progress.update(task, advance=1)
+                    if isinstance(error_msg, list):
+                        color_diff(console, error_msg, log_fp)
 
     modified = [Path(f) for f in files if os.stat(f).st_mtime > start_time]
     if modified:
@@ -95,13 +95,13 @@ def main(
 
 
 def run_codemods(
-    codemods: list[type[ContextAwareTransformer]],
+    codemods: List[Type[ContextAwareTransformer]],
     metadata_manager: FullRepoManager,
-    scratch: dict[str, Any],
+    scratch: Dict[str, Any],
     package: Path,
     diff: bool,
     filename: str,
-) -> list[str] | None:
+) -> Union[List[str], None]:
     module_and_package = calculate_module_and_package(str(package), filename)
     context = CodemodContext(
         metadata_manager=metadata_manager,
@@ -142,7 +142,7 @@ def run_codemods(
     return None
 
 
-def color_diff(console: Console, lines: list[str], fp: TextIOWrapper | None) -> None:
+def color_diff(console: Console, lines: List[str], fp: Union[TextIOWrapper, None]) -> None:
     if fp is not None:
         return fp.writelines(lines)
     for line in lines:
