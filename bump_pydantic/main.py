@@ -18,6 +18,7 @@ from libcst.metadata import (
     ScopeProvider,
 )
 from rich.console import Console
+from rich.progress import Progress
 from typer import Argument, Exit, Option, Typer, echo
 
 from bump_pydantic import __version__
@@ -72,11 +73,14 @@ def main(
 
     codemods = gather_codemods()
 
-    with multiprocessing.Pool() as pool:
-        partial_run_codemods = functools.partial(run_codemods, codemods, metadata_manager, scratch, package, diff)
-        for error_msg in pool.imap_unordered(partial_run_codemods, files):
-            if isinstance(error_msg, list):
-                color_diff(console, error_msg)
+    partial_run_codemods = functools.partial(run_codemods, codemods, metadata_manager, scratch, package, diff)
+    with Progress(*Progress.get_default_columns(), transient=True) as progress:
+        task = progress.add_task(description="Processing...", total=len(files))
+        with multiprocessing.Pool() as pool:
+            for error_msg in pool.imap_unordered(partial_run_codemods, files):
+                progress.update(task, advance=1)
+                if isinstance(error_msg, list):
+                    color_diff(console, error_msg)
 
     modified = [Path(f) for f in files if os.stat(f).st_mtime > start_time]
     if modified:
