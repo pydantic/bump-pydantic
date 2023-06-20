@@ -22,7 +22,7 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: PyPy",
   "Framework :: Pydantic",
 ]
-dependencies = ["typer>=0.7.0", "libcst"]
+dependencies = ["typer>=0.7.0", "libcst", "rich"]
 
 [project.urls]
 Documentation = "https://github.com/pydantic/bump-pydantic#readme"
