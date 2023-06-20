@@ -29,7 +29,6 @@ from bump_pydantic.markers.find_base_model import find_base_model
 app = Typer(
     help="Convert Pydantic from V1 to V2 ♻️",
     invoke_without_command=True,
-    pretty_exceptions_enable=False,
 )
 
 
