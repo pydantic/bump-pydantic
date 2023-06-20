@@ -36,12 +36,11 @@ def main(
     diff: bool = Option(False, help="Show diff instead of applying changes."),
     version: bool = Option(None, "--version", callback=version_callback, is_eager=True),
 ):
-    cwd = os.getcwd()
-    files_str = [path.absolute() for path in package.glob("**/*.py")]
-    files = [str(file.relative_to(cwd)) for file in files_str]
+    files_str = list(package.glob("**/*.py"))
+    files = [str(file.relative_to(".")) for file in files_str]
 
     providers = {ScopeProvider, PositionProvider, FullyQualifiedNameProvider}
-    metadata_manager = FullRepoManager(cwd, files, providers=providers)  # type: ignore[arg-type]
+    metadata_manager = FullRepoManager(".", files, providers=providers)  # type: ignore[arg-type]
     metadata_manager.resolve_cache()
 
     scratch: Dict[str, Any] = {}
