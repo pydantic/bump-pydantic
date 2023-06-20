@@ -105,27 +105,26 @@ def run_codemods(
         code = fp.read()
         fp.seek(0)
 
-        input_code = str(code)
+        input_tree = cst.parse_module(code)
 
         for codemod in codemods:
             transformer = codemod(context=context)
 
-            input_tree = cst.parse_module(input_code)
             output_tree = transformer.transform_module(input_tree)
+            input_tree = output_tree
 
-            input_code = output_tree.code
-
-        if code != input_code:
+        output_code = input_tree.code
+        if code != output_code:
             if diff:
                 lines = difflib.unified_diff(
                     code.splitlines(keepends=True),
-                    input_code.splitlines(keepends=True),
+                    output_code.splitlines(keepends=True),
                     fromfile=filename,
                     tofile=filename,
                 )
                 return list(lines)
             else:
-                fp.write(input_code)
+                fp.write(output_code)
                 fp.truncate()
 
     return None
