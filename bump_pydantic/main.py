@@ -1,9 +1,8 @@
 import difflib
 import os
-import sys
 import time
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Iterator
 
 import libcst as cst
 from libcst.codemod import CodemodContext
@@ -14,6 +13,7 @@ from libcst.metadata import (
     PositionProvider,
     ScopeProvider,
 )
+from rich.console import Console
 from typer import Argument, Exit, Option, Typer, echo
 
 from bump_pydantic import __version__
@@ -36,6 +36,7 @@ def main(
     diff: bool = Option(False, help="Show diff instead of applying changes."),
     version: bool = Option(None, "--version", callback=version_callback, is_eager=True),
 ):
+    console = Console()
     files_str = list(package.glob("**/*.py"))
     files = [str(file.relative_to(".")) for file in files_str]
 
@@ -68,7 +69,13 @@ def main(
     codemods = gather_codemods()
 
     # TODO: We can run this in parallel - batch it into files / cores.
-    # We may need to run the resolve_cache() on each core - not sure.
+    # with ProcessPoolExecutor():
+    #     cpu_count = multiprocessing.cpu_count()
+    #     batch_size = len(files) // cpu_count + 1
+
+    #     batches = [files[i : i + batch_size] for i in range(0, len(files), batch_size)]
+    #     print(batches)
+
     for codemod in codemods:
         for filename in files:
             module_and_package = calculate_module_and_package(str(package), filename)
@@ -91,14 +98,15 @@ def main(
 
             if input_code != output_code:
                 if diff:
-                    # TODO: Should be colored.
-                    lines = difflib.unified_diff(
-                        input_code.splitlines(keepends=True),
-                        output_code.splitlines(keepends=True),
-                        fromfile=filename,
-                        tofile=filename,
+                    color_diff(
+                        console=console,
+                        lines=difflib.unified_diff(
+                            input_code.splitlines(keepends=True),
+                            output_code.splitlines(keepends=True),
+                            fromfile=filename,
+                            tofile=filename,
+                        ),
                     )
-                    sys.stdout.writelines(lines)
                 else:
                     with open(filename, "w") as fp:
                         fp.write(output_tree.code)
@@ -106,3 +114,16 @@ def main(
     modified = [Path(f) for f in files if os.stat(f).st_mtime > start_time]
     if modified:
         print(f"Refactored {len(modified)} files.")
+
+
+def color_diff(console: Console, lines: Iterator[str]) -> None:
+    for line in lines:
+        line = line.rstrip("\n")
+        if line.startswith("+"):
+            console.print(line, style="green")
+        elif line.startswith("-"):
+            console.print(line, style="red")
+        elif line.startswith("^"):
+            console.print(line, style="blue")
+        else:
+            console.print(line, style="white")
