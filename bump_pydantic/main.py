@@ -55,24 +55,16 @@ def main(
     metadata_manager.resolve_cache()
 
     scratch: dict[str, Any] = {}
-    for filename in files:
-        code = Path(filename).read_text()
-        module = cst.parse_module(code)
-        module_and_package = calculate_module_and_package(str(package), filename)
+    with Progress(*Progress.get_default_columns(), transient=True) as progress:
+        task = progress.add_task(description="Running class visitor...", total=len(files))
+        with multiprocessing.Pool() as pool:
+            partial_visit_class_def = functools.partial(visit_class_def, metadata_manager, str(package))
+            for local_scratch in pool.imap_unordered(partial_visit_class_def, files):
+                progress.advance(task)
+                for key, value in local_scratch.items():
+                    scratch.setdefault(key, value).update(value)
 
-        context = CodemodContext(
-            metadata_manager=metadata_manager,
-            filename=filename,
-            full_module_name=module_and_package.name,
-            full_package_name=module_and_package.package,
-            scratch=scratch,
-        )
-        visitor = ClassDefVisitor(context=context)
-        visitor.transform_module(module)
-        scratch = context.scratch
-
-    find_base_model(context=context)  # type: ignore[assignment]
-    scratch = context.scratch  # type: ignore[assignment]
+    find_base_model(scratch)
 
     start_time = time.time()
 
@@ -85,13 +77,29 @@ def main(
             ctx_mgr = log_file.open("a+") if log_file else contextlib.nullcontext()
             with ctx_mgr as log_fp:  # type: ignore[attr-defined]
                 for error_msg in pool.imap_unordered(partial_run_codemods, files):
-                    progress.update(task, advance=1)
+                    progress.advance(task)
                     if isinstance(error_msg, list):
                         color_diff(console, error_msg, log_fp)
 
     modified = [Path(f) for f in files if os.stat(f).st_mtime > start_time]
     if modified:
         print(f"Refactored {len(modified)} files.")
+
+
+def visit_class_def(metadata_manager: FullRepoManager, package: str, filename: str) -> Dict[str, Any]:
+    code = Path(filename).read_text()
+    module = cst.parse_module(code)
+    module_and_package = calculate_module_and_package(package, filename)
+
+    context = CodemodContext(
+        metadata_manager=metadata_manager,
+        filename=filename,
+        full_module_name=module_and_package.name,
+        full_package_name=module_and_package.package,
+    )
+    visitor = ClassDefVisitor(context=context)
+    visitor.transform_module(module)
+    return context.scratch
 
 
 def run_codemods(
