@@ -152,7 +152,10 @@ def run_codemods(
 
 def color_diff(console: Console, lines: List[str], fp: Union[TextIOWrapper, None]) -> None:
     if fp is not None:
-        return fp.writelines(lines)
+        fp.writelines(lines)
+        fp.flush()
+        return None
+
     for line in lines:
         line = line.rstrip("\n")
         if line.startswith("+"):
