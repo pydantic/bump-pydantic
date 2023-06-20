@@ -5,6 +5,7 @@ import functools
 import multiprocessing
 import os
 import time
+from io import TextIOWrapper
 from pathlib import Path
 from typing import Any
 
@@ -26,7 +27,11 @@ from bump_pydantic.codemods import gather_codemods
 from bump_pydantic.codemods.class_def_visitor import ClassDefVisitor
 from bump_pydantic.markers.find_base_model import find_base_model
 
-app = Typer(help="Convert Pydantic from V1 to V2 ♻️", invoke_without_command=True)
+app = Typer(
+    help="Convert Pydantic from V1 to V2 ♻️",
+    invoke_without_command=True,
+    pretty_exceptions_enable=False,
+)
 
 
 def version_callback(value: bool):
@@ -39,6 +44,7 @@ def version_callback(value: bool):
 def main(
     package: Path = Argument(..., exists=True, dir_okay=True, allow_dash=False),
     diff: bool = Option(False, help="Show diff instead of applying changes."),
+    log_file: Path | None = Option(None, help="Log file to write to."),
     version: bool = Option(None, "--version", callback=version_callback, is_eager=True),
 ):
     console = Console()
@@ -77,10 +83,11 @@ def main(
     with Progress(*Progress.get_default_columns(), transient=True) as progress:
         task = progress.add_task(description="Processing...", total=len(files))
         with multiprocessing.Pool() as pool:
+            log_fp = log_file.open("a") if log_file else None
             for error_msg in pool.imap_unordered(partial_run_codemods, files):
                 progress.update(task, advance=1)
                 if isinstance(error_msg, list):
-                    color_diff(console, error_msg)
+                    color_diff(console, error_msg, log_fp)
 
     modified = [Path(f) for f in files if os.stat(f).st_mtime > start_time]
     if modified:
@@ -135,7 +142,9 @@ def run_codemods(
     return None
 
 
-def color_diff(console: Console, lines: list[str]) -> None:
+def color_diff(console: Console, lines: list[str], fp: TextIOWrapper | None) -> None:
+    if fp is not None:
+        return fp.writelines(lines)
     for line in lines:
         line = line.rstrip("\n")
         if line.startswith("+"):

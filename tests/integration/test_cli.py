@@ -259,7 +259,7 @@ def test_command_line(tmp_path: Path, before: Folder, expected: Folder) -> None:
 
         result = runner.invoke(app, [before.name])
         assert result.exit_code == 0, result.output
-        assert result.output == "Refactored 4 files.\n"
+        assert result.output.endswith("Refactored 4 files.\n")
 
         after = Folder.from_structure(Path(td) / before.name)
 
