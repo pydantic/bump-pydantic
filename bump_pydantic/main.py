@@ -1,4 +1,3 @@
-import contextlib
 import difflib
 import functools
 import multiprocessing
@@ -49,6 +48,8 @@ def main(
     version: bool = Option(None, "--version", callback=version_callback, is_eager=True),
 ):
     console = Console()
+    log_fp = log_file.open("a+") if log_file else None
+
     files_str = list(package.glob("**/*.py"))
     files = [str(file.relative_to(".")) for file in files_str]
 
@@ -76,18 +77,19 @@ def main(
     with Progress(*Progress.get_default_columns(), transient=True) as progress:
         task = progress.add_task(description="Processing...", total=len(files))
         with multiprocessing.Pool() as pool:
-            log_file.open("a+") if log_file else contextlib.nullcontext()
             for error_msg in pool.imap_unordered(partial_run_codemods, files):
                 progress.advance(task)
                 if isinstance(error_msg, list):
-                    if log_file is None:
+                    if log_fp is None:
                         color_diff(console, error_msg)
                     else:
-                        with log_file.open("a+") as log_fp:
-                            log_fp.writelines(error_msg)
+                        log_fp.writelines(error_msg)
+
     modified = [Path(f) for f in files if os.stat(f).st_mtime > start_time]
     if modified:
         print(f"Refactored {len(modified)} files.")
+
+    log_fp.close() if log_fp else None
 
 
 def visit_class_def(metadata_manager: FullRepoManager, package: str, filename: str) -> Dict[str, Any]:
