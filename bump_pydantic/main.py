@@ -5,7 +5,7 @@ import os
 import time
 from contextlib import nullcontext
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Type, TypeVar, Union
+from typing import Any, Callable, Dict, Iterable, List, Type, TypeVar, Union
 
 import libcst as cst
 from libcst.codemod import CodemodContext, ContextAwareTransformer
@@ -77,11 +77,14 @@ def main(
         with multiprocessing.Pool() as pool, log_ctx_mgr as log_fp:  # type: ignore[attr-defined]
             for error_msg in pool.imap_unordered(partial_run_codemods, files):
                 progress.advance(task)
-                if isinstance(error_msg, list):
-                    if log_fp is None:
-                        color_diff(console, error_msg)
-                    else:
-                        log_fp.writelines(error_msg)
+                if error_msg is None:
+                    continue
+
+                if log_fp is None:
+                    color_diff(console, error_msg)
+                else:
+                    log_fp.writelines(error_msg)
+
             if log_fp:
                 log_fp.write("Run successfully!\n")
 
@@ -106,15 +109,15 @@ def visit_class_def(metadata_manager: FullRepoManager, package: Path, filename: 
     return context.scratch
 
 
-def capture_exception(func: Callable[P, T]) -> Callable[P, Union[T, str]]:
+def capture_exception(func: Callable[P, T]) -> Callable[P, Union[T, Iterable[str]]]:
     @functools.wraps(func)
-    def wrapper(*args: P.args, **kwargs: P.kwargs) -> Union[T, str]:
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> Union[T, Iterable[str]]:
         try:
             return func(*args, **kwargs)
         except Exception as exc:
             func_args = [repr(arg) for arg in args]
             func_kwargs = [f"{key}={repr(value)}" for key, value in kwargs.items()]
-            return f"{func.__name__}({', '.join(func_args + func_kwargs)})\n{exc}"
+            return [f"{func.__name__}({', '.join(func_args + func_kwargs)})\n{exc}"]
 
     return wrapper
 
@@ -167,7 +170,7 @@ def run_codemods(
     return None
 
 
-def color_diff(console: Console, lines: List[str]) -> None:
+def color_diff(console: Console, lines: Iterable[str]) -> None:
     for line in lines:
         line = line.rstrip("\n")
         if line.startswith("+"):
