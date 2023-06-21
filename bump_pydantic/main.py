@@ -3,6 +3,7 @@ import functools
 import multiprocessing
 import os
 import time
+from contextlib import nullcontext
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Type, TypeVar, Union
 
@@ -25,10 +26,7 @@ from bump_pydantic.codemods import gather_codemods
 from bump_pydantic.codemods.class_def_visitor import ClassDefVisitor
 from bump_pydantic.markers.find_base_model import find_base_model
 
-app = Typer(
-    help="Convert Pydantic from V1 to V2 ♻️",
-    invoke_without_command=True,
-)
+app = Typer(help="Convert Pydantic from V1 to V2 ♻️", invoke_without_command=True)
 
 P = ParamSpec("P")
 T = TypeVar("T")
@@ -48,8 +46,6 @@ def main(
     version: bool = Option(None, "--version", callback=version_callback, is_eager=True),
 ):
     console = Console()
-    log_fp = log_file.open("a+") if log_file else None
-
     files_str = list(package.glob("**/*.py"))
     files = [str(file.relative_to(".")) for file in files_str]
 
@@ -59,9 +55,9 @@ def main(
 
     scratch: dict[str, Any] = {}
     with Progress(*Progress.get_default_columns(), transient=True) as progress:
-        task = progress.add_task(description="Running class visitor...", total=len(files))
+        task = progress.add_task(description="Looking for Pydantic Models...", total=len(files))
         with multiprocessing.Pool() as pool:
-            partial_visit_class_def = functools.partial(visit_class_def, metadata_manager, str(package))
+            partial_visit_class_def = functools.partial(visit_class_def, metadata_manager, package)
             for local_scratch in pool.imap_unordered(partial_visit_class_def, files):
                 progress.advance(task)
                 for key, value in local_scratch.items():
@@ -73,10 +69,12 @@ def main(
 
     codemods = gather_codemods()
 
+    log_ctx_mgr = log_file.open("a+") if log_file else nullcontext()
     partial_run_codemods = functools.partial(run_codemods, codemods, metadata_manager, scratch, package, diff)
+
     with Progress(*Progress.get_default_columns(), transient=True) as progress:
-        task = progress.add_task(description="Processing...", total=len(files))
-        with multiprocessing.Pool() as pool:
+        task = progress.add_task(description="Executing codemods...", total=len(files))
+        with multiprocessing.Pool() as pool, log_ctx_mgr as log_fp:  # type: ignore[attr-defined]
             for error_msg in pool.imap_unordered(partial_run_codemods, files):
                 progress.advance(task)
                 if isinstance(error_msg, list):
@@ -84,19 +82,16 @@ def main(
                         color_diff(console, error_msg)
                     else:
                         log_fp.writelines(error_msg)
-                        log_fp.flush()
 
     modified = [Path(f) for f in files if os.stat(f).st_mtime > start_time]
     if modified:
         print(f"Refactored {len(modified)} files.")
 
-    log_fp.close() if log_fp else None
 
-
-def visit_class_def(metadata_manager: FullRepoManager, package: str, filename: str) -> Dict[str, Any]:
+def visit_class_def(metadata_manager: FullRepoManager, package: Path, filename: str) -> Dict[str, Any]:
     code = Path(filename).read_text()
     module = cst.parse_module(code)
-    module_and_package = calculate_module_and_package(package, filename)
+    module_and_package = calculate_module_and_package(str(package), filename)
 
     context = CodemodContext(
         metadata_manager=metadata_manager,
