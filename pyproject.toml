@@ -75,6 +75,9 @@ mccabe = { max-complexity = 14 }
 isort = { known-first-party = ['bump_pydantic', 'tests'] }
 target-version = 'py38'
 
+[tool.pytest.ini_options]
+xfail_strict = true
+
 [tool.coverage.run]
 source_pkgs = ["bump_pydantic"]
 branch = true

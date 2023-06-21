@@ -7,6 +7,12 @@ from libcst.codemod import CodemodContext, VisitorBasedCodemodCommand
 from libcst.codemod.visitors import AddImportsVisitor
 from libcst.metadata import PositionProvider
 
+UNABLE_REFACTOR_COMMENT = (
+    "# TODO[pydantic]: We couldn't refactor this class, please create the `model_config` manually."
+)
+CHECK_LINK_COMMENT = "# Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information."
+INHERIT_CONFIG_COMMENT = "# TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually."  # noqa: E501
+
 REMOVED_KEYS = [
     "allow_mutation",
     "error_msg_templates",
@@ -120,48 +126,25 @@ class ReplaceConfigCodemod(VisitorBasedCodemodCommand):
     @m.leave(m.ClassDef(name=m.Name(value="Config")))
     def leave_config_class(self, original_node: cst.ClassDef, updated_node: cst.ClassDef) -> cst.ClassDef:
         self.inside_config_class = False
+        if self.invalid_config_class or self.inherited_config_class:
+            for line in updated_node.leading_lines:
+                if m.matches(line, m.EmptyLine(comment=m.Comment(value=CHECK_LINK_COMMENT))):
+                    return updated_node
+
         if self.invalid_config_class:
             return updated_node.with_changes(
                 leading_lines=[
                     *updated_node.leading_lines,
-                    cst.EmptyLine(
-                        comment=cst.Comment(
-                            value=(
-                                "# TODO[pydantic]: We couldn't refactor this class, "
-                                "please create the `model_config` manually."
-                            )
-                        )
-                    ),
-                    cst.EmptyLine(
-                        comment=cst.Comment(
-                            value=(
-                                "# Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config "
-                                "for more information."
-                            )
-                        )
-                    ),
+                    cst.EmptyLine(comment=cst.Comment(value=(UNABLE_REFACTOR_COMMENT))),
+                    cst.EmptyLine(comment=cst.Comment(value=(CHECK_LINK_COMMENT))),
                 ]
             )
         elif self.inherited_config_class:
             return updated_node.with_changes(
                 leading_lines=[
                     *updated_node.leading_lines,
-                    cst.EmptyLine(
-                        comment=cst.Comment(
-                            value=(
-                                "# TODO[pydantic]: The `Config` class inherits from another class, "
-                                "please create the `model_config` manually."
-                            )
-                        )
-                    ),
-                    cst.EmptyLine(
-                        comment=cst.Comment(
-                            value=(
-                                "# Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config "
-                                "for more information."
-                            )
-                        )
-                    ),
+                    cst.EmptyLine(comment=cst.Comment(value=(INHERIT_CONFIG_COMMENT))),
+                    cst.EmptyLine(comment=cst.Comment(value=(CHECK_LINK_COMMENT))),
                 ]
             )
         return updated_node
