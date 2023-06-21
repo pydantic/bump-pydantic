@@ -84,6 +84,7 @@ def main(
                         color_diff(console, error_msg)
                     else:
                         log_fp.writelines(error_msg)
+                        log_fp.flush()
 
     modified = [Path(f) for f in files if os.stat(f).st_mtime > start_time]
     if modified:
@@ -108,9 +109,9 @@ def visit_class_def(metadata_manager: FullRepoManager, package: str, filename: s
     return context.scratch
 
 
-def capture_exception(func: Callable[P, T]) -> Callable[P, T | str]:
+def capture_exception(func: Callable[P, T]) -> Callable[P, Union[T, str]]:
     @functools.wraps(func)
-    def wrapper(*args: P.args, **kwargs: P.kwargs) -> T | str:
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> Union[T, str]:
         try:
             return func(*args, **kwargs)
         except Exception as exc:
