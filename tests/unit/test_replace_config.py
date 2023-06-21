@@ -129,3 +129,67 @@ class TestReplaceConfigCommand(CodemodTest):
                 allow_arbitrary_types = True
         """
         self.assertCodemod(before, after)
+
+    @pytest.mark.xfail(reason="Not implemented yet")
+    def test_inner_comments(self) -> None:
+        before = """
+        from pydantic import BaseModel
+
+        class Potato(BaseModel):
+            class Config:
+                # This is a comment
+                allow_arbitrary_types = True
+        """
+        after = """
+        from pydantic import BaseModel
+
+        class Potato(BaseModel):
+            model_config = ConfigDict(
+                # This is a comment
+                allow_arbitrary_types=True
+            )
+        """
+        self.assertCodemod(before, after)
+
+    @pytest.mark.xfail(reason="Not implemented yet")
+    def test_already_commented(self) -> None:
+        before = """
+        from pydantic import BaseModel
+
+        from potato import SuperConfig
+
+        class Potato(BaseModel):
+            # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
+            # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
+            class Config(SuperConfig):
+                allow_arbitrary_types = True
+        """
+        after = """
+        from pydantic import BaseModel
+
+        from potato import SuperConfig
+
+        class Potato(BaseModel):
+            # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
+            # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
+            class Config(SuperConfig):
+                allow_arbitrary_types = True
+        """
+        self.assertCodemod(before, after)
+
+    @pytest.mark.xfail(reason="Not implemented yet")
+    def test_extra_enum(self) -> None:
+        before = """
+        from pydantic import BaseModel, Extra
+
+        class Potato(BaseModel):
+            class Config:
+                extra = Extra.allow
+        """
+        after = """
+        from pydantic import BaseModel
+
+        class Potato(BaseModel):
+            model_config = ConfigDict(extra="allow")
+        """
+        self.assertCodemod(before, after)

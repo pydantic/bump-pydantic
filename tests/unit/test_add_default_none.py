@@ -28,7 +28,7 @@ class TestClassDefVisitor(UnitTest):
         instance = ClassDefVisitor(context=context)
         mod.visit(instance)
 
-        find_base_model(context=context)
+        find_base_model(scratch=context.scratch)
 
         instance = AddDefaultNoneCommand(context=context)  # type: ignore[assignment]
         return mod.visit(instance)

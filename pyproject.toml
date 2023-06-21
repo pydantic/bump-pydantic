@@ -22,7 +22,7 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: PyPy",
   "Framework :: Pydantic",
 ]
-dependencies = ["typer>=0.7.0", "libcst", "rich"]
+dependencies = ["typer>=0.7.0", "libcst", "rich", "typing_extensions"]
 
 [project.urls]
 Documentation = "https://github.com/pydantic/bump-pydantic#readme"
@@ -58,7 +58,7 @@ lint = [
   "black --check --diff {args:.}",
   "mypy {args:bump_pydantic tests}",
 ]
-format = ["black {args:.}", "ruff --fix {args:.}"]
+format = ["ruff --fix {args:.}", "black {args:.}"]
 
 [[tool.hatch.envs.all.matrix]]
 python = ["3.8", "3.9", "3.10", "3.11"]

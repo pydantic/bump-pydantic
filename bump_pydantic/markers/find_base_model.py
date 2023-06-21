@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from typing import Any
 
 from libcst.codemod import CodemodContext
 
@@ -17,8 +18,8 @@ def revert_dictionary(classes: defaultdict[str, set[str]]) -> defaultdict[str, s
     return revert_classes
 
 
-def find_base_model(context: CodemodContext) -> None:
-    classes = context.scratch[ClassDefVisitor.CONTEXT_KEY]
+def find_base_model(scratch: dict[str, Any]) -> None:
+    classes = scratch[ClassDefVisitor.CONTEXT_KEY]
     revert_classes = revert_dictionary(classes)
     base_model_set: set[str] = set()
 
@@ -38,7 +39,7 @@ def find_base_model(context: CodemodContext) -> None:
                 base_model_set.add(base)
                 bases_queue.extend(revert_classes[base])
 
-    context.scratch[CONTEXT_KEY] = base_model_set
+    scratch[CONTEXT_KEY] = base_model_set
 
 
 if __name__ == "__main__":
@@ -76,5 +77,5 @@ if __name__ == "__main__":
         context = CodemodContext(wrapper=wrapper)
         command = ClassDefVisitor(context=context)
         mod = wrapper.visit(command)
-        find_base_model(context=context)
+        find_base_model(scratch=context.scratch)
         pprint(context.scratch[CONTEXT_KEY])

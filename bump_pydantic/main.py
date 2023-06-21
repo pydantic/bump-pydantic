@@ -1,12 +1,11 @@
-from __future__ import annotations
-
 import difflib
 import functools
 import multiprocessing
 import os
 import time
+from contextlib import nullcontext
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable, Dict, List, Type, TypeVar, Union
 
 import libcst as cst
 from libcst.codemod import CodemodContext, ContextAwareTransformer
@@ -18,7 +17,9 @@ from libcst.metadata import (
     ScopeProvider,
 )
 from rich.console import Console
+from rich.progress import Progress
 from typer import Argument, Exit, Option, Typer, echo
+from typing_extensions import ParamSpec
 
 from bump_pydantic import __version__
 from bump_pydantic.codemods import gather_codemods
@@ -26,6 +27,9 @@ from bump_pydantic.codemods.class_def_visitor import ClassDefVisitor
 from bump_pydantic.markers.find_base_model import find_base_model
 
 app = Typer(help="Convert Pydantic from V1 to V2 ♻️", invoke_without_command=True)
+
+P = ParamSpec("P")
+T = TypeVar("T")
 
 
 def version_callback(value: bool):
@@ -38,6 +42,7 @@ def version_callback(value: bool):
 def main(
     package: Path = Argument(..., exists=True, dir_okay=True, allow_dash=False),
     diff: bool = Option(False, help="Show diff instead of applying changes."),
+    log_file: Union[Path, None] = Option(None, help="Log file to write to."),
     version: bool = Option(None, "--version", callback=version_callback, is_eager=True),
 ):
     console = Console()
@@ -49,48 +54,78 @@ def main(
     metadata_manager.resolve_cache()
 
     scratch: dict[str, Any] = {}
-    for filename in files:
-        code = Path(filename).read_text()
-        module = cst.parse_module(code)
-        module_and_package = calculate_module_and_package(str(package), filename)
+    with Progress(*Progress.get_default_columns(), transient=True) as progress:
+        task = progress.add_task(description="Looking for Pydantic Models...", total=len(files))
+        with multiprocessing.Pool() as pool:
+            partial_visit_class_def = functools.partial(visit_class_def, metadata_manager, package)
+            for local_scratch in pool.imap_unordered(partial_visit_class_def, files):
+                progress.advance(task)
+                for key, value in local_scratch.items():
+                    scratch.setdefault(key, value).update(value)
 
-        context = CodemodContext(
-            metadata_manager=metadata_manager,
-            filename=filename,
-            full_module_name=module_and_package.name,
-            full_package_name=module_and_package.package,
-            scratch=scratch,
-        )
-        visitor = ClassDefVisitor(context=context)
-        visitor.transform_module(module)
-        scratch = context.scratch
-
-    find_base_model(context=context)  # type: ignore[assignment]
-    scratch = context.scratch  # type: ignore[assignment]
+    find_base_model(scratch)
 
     start_time = time.time()
 
     codemods = gather_codemods()
 
-    with multiprocessing.Pool() as pool:
-        partial_run_codemods = functools.partial(run_codemods, codemods, metadata_manager, scratch, package, diff)
-        for error_msg in pool.imap_unordered(partial_run_codemods, files):
-            if isinstance(error_msg, list):
-                color_diff(console, error_msg)
+    log_ctx_mgr = log_file.open("a+") if log_file else nullcontext()
+    partial_run_codemods = functools.partial(run_codemods, codemods, metadata_manager, scratch, package, diff)
+
+    with Progress(*Progress.get_default_columns(), transient=True) as progress:
+        task = progress.add_task(description="Executing codemods...", total=len(files))
+        with multiprocessing.Pool() as pool, log_ctx_mgr as log_fp:  # type: ignore[attr-defined]
+            for error_msg in pool.imap_unordered(partial_run_codemods, files):
+                progress.advance(task)
+                if isinstance(error_msg, list):
+                    if log_fp is None:
+                        color_diff(console, error_msg)
+                    else:
+                        log_fp.writelines(error_msg)
 
     modified = [Path(f) for f in files if os.stat(f).st_mtime > start_time]
     if modified:
         print(f"Refactored {len(modified)} files.")
 
 
+def visit_class_def(metadata_manager: FullRepoManager, package: Path, filename: str) -> Dict[str, Any]:
+    code = Path(filename).read_text()
+    module = cst.parse_module(code)
+    module_and_package = calculate_module_and_package(str(package), filename)
+
+    context = CodemodContext(
+        metadata_manager=metadata_manager,
+        filename=filename,
+        full_module_name=module_and_package.name,
+        full_package_name=module_and_package.package,
+    )
+    visitor = ClassDefVisitor(context=context)
+    visitor.transform_module(module)
+    return context.scratch
+
+
+def capture_exception(func: Callable[P, T]) -> Callable[P, Union[T, str]]:
+    @functools.wraps(func)
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> Union[T, str]:
+        try:
+            return func(*args, **kwargs)
+        except Exception as exc:
+            func_args = [repr(arg) for arg in args]
+            func_kwargs = [f"{key}={repr(value)}" for key, value in kwargs.items()]
+            return f"{func.__name__}({', '.join(func_args + func_kwargs)})\n{exc}"
+
+    return wrapper
+
+
+@capture_exception
 def run_codemods(
-    codemods: list[type[ContextAwareTransformer]],
+    codemods: List[Type[ContextAwareTransformer]],
     metadata_manager: FullRepoManager,
-    scratch: dict[str, Any],
+    scratch: Dict[str, Any],
     package: Path,
     diff: bool,
     filename: str,
-) -> list[str] | None:
+) -> Union[List[str], None]:
     module_and_package = calculate_module_and_package(str(package), filename)
     context = CodemodContext(
         metadata_manager=metadata_manager,
@@ -130,7 +165,7 @@ def run_codemods(
     return None
 
 
-def color_diff(console: Console, lines: list[str]) -> None:
+def color_diff(console: Console, lines: List[str]) -> None:
     for line in lines:
         line = line.rstrip("\n")
         if line.startswith("+"):

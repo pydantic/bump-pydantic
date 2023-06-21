@@ -126,7 +126,7 @@ if __name__ == "__main__":
         command = ClassDefVisitor(context=context)
         mod = wrapper.visit(command)
 
-        find_base_model(context=context)
+        find_base_model(scratch=context.scratch)
         pprint(context.scratch)
 
         command = AddDefaultNoneCommand(context=context)  # type: ignore[assignment]
