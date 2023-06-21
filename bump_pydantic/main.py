@@ -82,6 +82,8 @@ def main(
                         color_diff(console, error_msg)
                     else:
                         log_fp.writelines(error_msg)
+            if log_fp:
+                log_fp.write("Run successfully!\n")
 
     modified = [Path(f) for f in files if os.stat(f).st_mtime > start_time]
     if modified:
