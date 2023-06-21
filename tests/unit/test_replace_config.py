@@ -151,7 +151,6 @@ class TestReplaceConfigCommand(CodemodTest):
         """
         self.assertCodemod(before, after)
 
-    @pytest.mark.xfail(reason="Not implemented yet")
     def test_already_commented(self) -> None:
         before = """
         from pydantic import BaseModel
