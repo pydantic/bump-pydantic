@@ -4,7 +4,7 @@ import libcst as cst
 from libcst import matchers as m
 from libcst._nodes.module import Module
 from libcst.codemod import CodemodContext, VisitorBasedCodemodCommand
-from libcst.codemod.visitors import AddImportsVisitor
+from libcst.codemod.visitors import AddImportsVisitor, RemoveImportsVisitor
 
 PREFIX_COMMENT = "# TODO[pydantic]: "
 REFACTOR_COMMENT = f"{PREFIX_COMMENT}We couldn't refactor this class, please create the `model_config` manually."
@@ -38,6 +38,10 @@ RENAMED_KEYS = {
     "validate_all": "validate_default",
 }
 
+EXTRA_ATTRIBUTE = m.Attribute(
+    value=m.Name("Extra"),
+    attr=m.Name(value=m.MatchIfTrue(lambda v: v in ("allow", "forbid", "ignore"))),
+)
 BASE_MODEL_WITH_CONFIG = m.ClassDef(
     bases=[
         m.ZeroOrMore(),
@@ -151,10 +155,15 @@ class ReplaceConfigCodemod(VisitorBasedCodemodCommand):
     def visit_AssignTarget(self, node: cst.AssignTarget) -> None:
         if self.inside_config_class:
             keyword = RENAMED_KEYS.get(node.target.value, node.target.value)  # type: ignore[attr-defined]
+            if m.matches(self.assign_value, EXTRA_ATTRIBUTE):
+                value = cst.SimpleString(value=f'"{self.assign_value.attr.value}"')  # type: ignore[attr-defined]
+                RemoveImportsVisitor.remove_unused_import(self.context, "pydantic", "Extra")
+            else:
+                value = self.assign_value  # type: ignore[assignment]
             self.config_args.append(
                 cst.Arg(
                     keyword=node.target.with_changes(value=keyword),  # type: ignore[arg-type]
-                    value=self.assign_value,
+                    value=value,
                     equal=cst.AssignEqual(
                         whitespace_before=cst.SimpleWhitespace(""),
                         whitespace_after=cst.SimpleWhitespace(""),

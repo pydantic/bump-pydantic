@@ -245,3 +245,37 @@ class TestReplaceConfigCommand(CodemodTest):
             model_config = ConfigDict(from_attributes=True)
         """
         self.assertCodemod(before, after)
+
+    def test_rename_extra_enum_by_string(self) -> None:
+        before = """
+        from pydantic import BaseModel, Extra
+
+        class Potato(BaseModel):
+            class Config:
+                extra = Extra.allow
+        """
+        after = """
+        from pydantic import ConfigDict, BaseModel
+
+        class Potato(BaseModel):
+            model_config = ConfigDict(extra="allow")
+        """
+        self.assertCodemod(before, after)
+
+    def test_noop_extra(self) -> None:
+        before = """
+        from pydantic import BaseModel
+        from potato import Extra
+
+        class Potato(BaseModel):
+            class Config:
+                extra = Extra.potato
+        """
+        after = """
+        from pydantic import ConfigDict, BaseModel
+        from potato import Extra
+
+        class Potato(BaseModel):
+            model_config = ConfigDict(extra=Extra.potato)
+        """
+        self.assertCodemod(before, after)
