@@ -208,7 +208,7 @@ def expected() -> Folder:
                 "",
                 "",
                 "class A(BaseModel):",
-                "    model_config = ConfigDict(orm_mode=True, validate_all=True)",
+                "    model_config = ConfigDict(from_attributes=True, validate_default=True)",
                 "",
                 "",
                 "class BaseConfig:",

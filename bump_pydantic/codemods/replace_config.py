@@ -38,7 +38,6 @@ RENAMED_KEYS = {
     "schema_extra": "json_schema_extra",
     "validate_all": "validate_default",
 }
-# TODO: The codemod should not replace `Config` in case of removed keys, right?
 
 BASE_MODEL_WITH_CONFIG = m.ClassDef(
     bases=[
@@ -154,9 +153,10 @@ class ReplaceConfigCodemod(VisitorBasedCodemodCommand):
 
     def visit_AssignTarget(self, node: cst.AssignTarget) -> None:
         if self.inside_config_class:
+            keyword = RENAMED_KEYS.get(node.target.value, node.target.value)  # type: ignore[attr-defined]
             self.config_args.append(
                 cst.Arg(
-                    keyword=node.target,  # type: ignore[arg-type]
+                    keyword=node.target.with_changes(value=keyword),  # type: ignore[arg-type]
                     value=self.assign_value,
                     equal=cst.AssignEqual(
                         whitespace_before=cst.SimpleWhitespace(""),

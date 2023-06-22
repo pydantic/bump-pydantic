@@ -229,3 +229,19 @@ class TestReplaceConfigCommand(CodemodTest):
             model_config = ConfigDict(allow_mutation=True, smart_union=True)
         """
         self.assertCodemod(before, after)
+
+    def test_renamed_keys(self) -> None:
+        before = """
+        from pydantic import BaseModel
+
+        class Potato(BaseModel):
+            class Config:
+                orm_mode = True
+        """
+        after = """
+        from pydantic import ConfigDict, BaseModel
+
+        class Potato(BaseModel):
+            model_config = ConfigDict(from_attributes=True)
+        """
+        self.assertCodemod(before, after)
