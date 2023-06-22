@@ -49,3 +49,28 @@ class TestReplaceConfigCommand(CodemodTest):
             potato: List[int] = pydantic.Field(..., min_length=1, max_length=10)
         """
         self.assertCodemod(before, after)
+
+    def test_field_env_on_base_settings(self) -> None:
+        before = """
+        from pydantic import BaseSettings, Field
+
+        class Settings(BaseSettings):
+            potato: int = Field(..., env="POTATO")
+        """
+        after = """
+        from pydantic import BaseSettings, Field
+
+        class Settings(BaseSettings):
+            potato: int = Field(..., validation_alias="POTATO")
+        """
+        self.assertCodemod(before, after)
+
+    @pytest.mark.xfail(reason="Not implemented yet")
+    def test_field_noop_on_env_base_model(self) -> None:
+        code = """
+        from pydantic import BaseModel, Field
+
+        class Potato(BaseModel):
+            potato: int = Field(..., env="POTATO")
+        """
+        self.assertCodemod(code, code)
