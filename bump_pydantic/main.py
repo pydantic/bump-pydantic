@@ -45,6 +45,9 @@ def main(
     log_file: Union[Path, None] = Option(None, help="Log file to write to."),
     version: bool = Option(None, "--version", callback=version_callback, is_eager=True),
 ):
+    # NOTE: LIBCST_PARSER_TYPE=native is required according to https://github.com/Instagram/LibCST/issues/487.
+    os.environ["LIBCST_PARSER_TYPE"] = "native"
+
     console = Console()
     files_str = list(package.glob("**/*.py"))
     files = [str(file.relative_to(".")) for file in files_str]
