@@ -10,6 +10,8 @@ RENAMED_KEYWORDS = {
     "max_items": "max_length",
     "allow_mutation": "frozen",
     "regex": "pattern",
+    # NOTE: This is only for BaseSettings.
+    "env": "validation_alias",
 }
 
 IMPORT_FIELD = m.Module(
@@ -23,6 +25,14 @@ IMPORT_FIELD = m.Module(
                     names=[
                         m.ZeroOrMore(),
                         m.ImportAlias(name=m.Name("Field")),
+                        m.ZeroOrMore(),
+                    ],
+                )
+                | m.ImportFrom(
+                    module=m.Name("pydantic") | m.Name("pydantic_settings"),
+                    names=[
+                        m.ZeroOrMore(),
+                        m.ImportAlias(name=m.Name("BaseSettings")),
                         m.ZeroOrMore(),
                     ],
                 ),
