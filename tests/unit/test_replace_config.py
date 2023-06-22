@@ -67,7 +67,7 @@ class TestReplaceConfigCommand(CodemodTest):
 
         class Potato2(BaseModel):
             class Config:
-                allow_mutation = True
+                strict = True
         """
         after = """
         from pydantic import ConfigDict, BaseModel
@@ -78,7 +78,7 @@ class TestReplaceConfigCommand(CodemodTest):
         potato = Potato()
 
         class Potato2(BaseModel):
-            model_config = ConfigDict(allow_mutation=True)
+            model_config = ConfigDict(strict=True)
         """
         self.assertCodemod(before, after)
 
@@ -190,5 +190,42 @@ class TestReplaceConfigCommand(CodemodTest):
 
         class Potato(BaseModel):
             model_config = ConfigDict(extra="allow")
+        """
+        self.assertCodemod(before, after)
+
+    def test_removed_keys(self) -> None:
+        before = """
+        from pydantic import BaseModel
+
+        class Potato(BaseModel):
+            class Config:
+                allow_mutation = True
+        """
+        after = """
+        from pydantic import ConfigDict, BaseModel
+
+        class Potato(BaseModel):
+            # TODO[pydantic]: The following keys were removed: `allow_mutation`.
+            # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
+            model_config = ConfigDict(allow_mutation=True)
+        """
+        self.assertCodemod(before, after)
+
+    def test_multiple_removed_keys(self) -> None:
+        before = """
+        from pydantic import BaseModel
+
+        class Potato(BaseModel):
+            class Config:
+                allow_mutation = True
+                smart_union = True
+        """
+        after = """
+        from pydantic import ConfigDict, BaseModel
+
+        class Potato(BaseModel):
+            # TODO[pydantic]: The following keys were removed: `allow_mutation`, `smart_union`.
+            # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
+            model_config = ConfigDict(allow_mutation=True, smart_union=True)
         """
         self.assertCodemod(before, after)

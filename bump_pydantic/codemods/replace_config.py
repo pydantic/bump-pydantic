@@ -7,11 +7,11 @@ from libcst.codemod import CodemodContext, VisitorBasedCodemodCommand
 from libcst.codemod.visitors import AddImportsVisitor
 from libcst.metadata import PositionProvider
 
-UNABLE_REFACTOR_COMMENT = (
-    "# TODO[pydantic]: We couldn't refactor this class, please create the `model_config` manually."
-)
+PREFIX_COMMENT = "# TODO[pydantic]: "
+REFACTOR_COMMENT = f"{PREFIX_COMMENT}We couldn't refactor this class, please create the `model_config` manually."
+REMOVED_KEYS_COMMENT = f"{PREFIX_COMMENT}The following keys were removed: {{keys}}."
+INHERIT_CONFIG_COMMENT = f"{PREFIX_COMMENT}The `Config` class inherits from another class, please create the `model_config` manually."  # noqa: E501
 CHECK_LINK_COMMENT = "# Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information."
-INHERIT_CONFIG_COMMENT = "# TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually."  # noqa: E501
 
 REMOVED_KEYS = [
     "allow_mutation",
@@ -135,7 +135,7 @@ class ReplaceConfigCodemod(VisitorBasedCodemodCommand):
             return updated_node.with_changes(
                 leading_lines=[
                     *updated_node.leading_lines,
-                    cst.EmptyLine(comment=cst.Comment(value=(UNABLE_REFACTOR_COMMENT))),
+                    cst.EmptyLine(comment=cst.Comment(value=(REFACTOR_COMMENT))),
                     cst.EmptyLine(comment=cst.Comment(value=(CHECK_LINK_COMMENT))),
                 ]
             )
@@ -206,6 +206,7 @@ class ReplaceConfigCodemod(VisitorBasedCodemodCommand):
                         ),
                     )
                 ],
+                leading_lines=self._leading_lines_from_removed_keys(self.config_args),
             )
             if m.matches(statement, m.ClassDef(name=m.Name(value="Config")))
             else statement
@@ -213,6 +214,18 @@ class ReplaceConfigCodemod(VisitorBasedCodemodCommand):
         ]
         self.config_args = []
         return updated_node.with_changes(body=updated_node.body.with_changes(body=body))
+
+    @staticmethod
+    def _leading_lines_from_removed_keys(args: List[cst.Arg]) -> List[cst.EmptyLine]:
+        removed_keys = [arg.keyword.value for arg in args if arg.keyword.value in REMOVED_KEYS]  # type: ignore
+        if not removed_keys:
+            return []
+
+        formatted_keys = ", ".join(f"`{key}`" for key in removed_keys)
+        return [
+            cst.EmptyLine(comment=cst.Comment(value=REMOVED_KEYS_COMMENT.format(keys=formatted_keys))),
+            cst.EmptyLine(comment=cst.Comment(value=CHECK_LINK_COMMENT)),
+        ]
 
 
 if __name__ == "__main__":
