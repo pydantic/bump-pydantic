@@ -5,7 +5,6 @@ from libcst import matchers as m
 from libcst._nodes.module import Module
 from libcst.codemod import CodemodContext, VisitorBasedCodemodCommand
 from libcst.codemod.visitors import AddImportsVisitor
-from libcst.metadata import PositionProvider
 
 PREFIX_COMMENT = "# TODO[pydantic]: "
 REFACTOR_COMMENT = f"{PREFIX_COMMENT}We couldn't refactor this class, please create the `model_config` manually."
@@ -107,8 +106,6 @@ class Config:
 
 class ReplaceConfigCodemod(VisitorBasedCodemodCommand):
     """Replace `Config` class by `ConfigDict` call."""
-
-    METADATA_DEPENDENCIES = (PositionProvider,)
 
     def __init__(self, context: CodemodContext) -> None:
         super().__init__(context)
