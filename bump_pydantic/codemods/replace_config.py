@@ -2,9 +2,9 @@ from typing import List
 
 import libcst as cst
 from libcst import matchers as m
-from libcst._nodes.module import Module
 from libcst.codemod import CodemodContext, VisitorBasedCodemodCommand
 from libcst.codemod.visitors import AddImportsVisitor, RemoveImportsVisitor
+from libcst.metadata import ClassScope, ScopeProvider
 
 PREFIX_COMMENT = "# TODO[pydantic]: "
 REFACTOR_COMMENT = f"{PREFIX_COMMENT}We couldn't refactor this class, please create the `model_config` manually."
@@ -111,6 +111,8 @@ class Config:
 class ReplaceConfigCodemod(VisitorBasedCodemodCommand):
     """Replace `Config` class by `ConfigDict` call."""
 
+    METADATA_DEPENDENCIES = (ScopeProvider,)
+
     def __init__(self, context: CodemodContext) -> None:
         super().__init__(context)
 
@@ -121,7 +123,9 @@ class ReplaceConfigCodemod(VisitorBasedCodemodCommand):
 
     @m.visit(m.ClassDef(name=m.Name(value="Config")))
     def visit_config_class(self, node: cst.ClassDef) -> None:
-        self.inside_config_class = True
+        scope = self.get_metadata(ScopeProvider, node)
+        if isinstance(scope, ClassScope):
+            self.inside_config_class = True
 
     @m.leave(m.ClassDef(name=m.Name(value="Config")))
     def leave_config_class(self, original_node: cst.ClassDef, updated_node: cst.ClassDef) -> cst.ClassDef:
@@ -171,7 +175,7 @@ class ReplaceConfigCodemod(VisitorBasedCodemodCommand):
                 )
             )
 
-    def leave_Module(self, original_node: Module, updated_node: Module) -> Module:
+    def leave_Module(self, original_node: cst.Module, updated_node: cst.Module) -> cst.Module:
         return updated_node
 
     @m.visit(BASE_MODEL_WITH_INHERITED_CONFIG)

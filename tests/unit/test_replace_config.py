@@ -279,3 +279,37 @@ class TestReplaceConfigCommand(CodemodTest):
             model_config = ConfigDict(extra=Extra.potato)
         """
         self.assertCodemod(before, after)
+
+    def test_extra_inside(self) -> None:
+        before = """
+        from typing import Type
+
+        from pydantic import BaseModel, Extra
+
+        class Model(BaseModel):
+            class Config:
+                extra = Extra.allow
+
+            def __init_subclass__(cls: "Type[Model]", **kwargs: Any) -> None:
+                class Config:
+                    extra = Extra.forbid
+
+                cls.Config = Config  # type: ignore
+                super().__init_subclass__(**kwargs)
+        """
+        after = """
+        from typing import Type
+
+        from pydantic import ConfigDict, BaseModel, Extra
+
+        class Model(BaseModel):
+            model_config = ConfigDict(extra="allow")
+
+            def __init_subclass__(cls: "Type[Model]", **kwargs: Any) -> None:
+                class Config:
+                    extra = Extra.forbid
+
+                cls.Config = Config  # type: ignore
+                super().__init_subclass__(**kwargs)
+        """
+        self.assertCodemod(before, after)

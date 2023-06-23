@@ -10,12 +10,7 @@ from typing import Any, Callable, Dict, Iterable, List, Type, TypeVar, Union
 import libcst as cst
 from libcst.codemod import CodemodContext, ContextAwareTransformer
 from libcst.helpers import calculate_module_and_package
-from libcst.metadata import (
-    FullRepoManager,
-    FullyQualifiedNameProvider,
-    PositionProvider,
-    ScopeProvider,
-)
+from libcst.metadata import FullRepoManager, FullyQualifiedNameProvider, ScopeProvider
 from rich.console import Console
 from rich.progress import Progress
 from typer import Argument, Exit, Option, Typer, echo
@@ -63,7 +58,7 @@ def main(
     files_str = list(package.glob("**/*.py"))
     files = [str(file.relative_to(".")) for file in files_str]
 
-    providers = {ScopeProvider, PositionProvider, FullyQualifiedNameProvider}
+    providers = {FullyQualifiedNameProvider, ScopeProvider}
     metadata_manager = FullRepoManager(".", files, providers=providers)  # type: ignore[arg-type]
     metadata_manager.resolve_cache()
 
