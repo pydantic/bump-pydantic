@@ -22,11 +22,15 @@ from typer import Argument, Exit, Option, Typer, echo
 from typing_extensions import ParamSpec
 
 from bump_pydantic import __version__
-from bump_pydantic.codemods import gather_codemods
+from bump_pydantic.codemods import Rule, gather_codemods
 from bump_pydantic.codemods.class_def_visitor import ClassDefVisitor
 from bump_pydantic.markers.find_base_model import find_base_model
 
-app = Typer(help="Convert Pydantic from V1 to V2 ♻️", invoke_without_command=True)
+app = Typer(
+    help="Convert Pydantic from V1 to V2 ♻️",
+    invoke_without_command=True,
+    add_completion=False,
+)
 
 P = ParamSpec("P")
 T = TypeVar("T")
@@ -42,8 +46,15 @@ def version_callback(value: bool):
 def main(
     package: Path = Argument(..., exists=True, dir_okay=True, allow_dash=False),
     diff: bool = Option(False, help="Show diff instead of applying changes."),
+    disable: List[Rule] = Option(default=[], help="Disable a rule."),
     log_file: Union[Path, None] = Option(None, help="Log file to write to."),
-    version: bool = Option(None, "--version", callback=version_callback, is_eager=True),
+    version: bool = Option(
+        None,
+        "--version",
+        callback=version_callback,
+        is_eager=True,
+        help="Show the version and exit.",
+    ),
 ):
     # NOTE: LIBCST_PARSER_TYPE=native is required according to https://github.com/Instagram/LibCST/issues/487.
     os.environ["LIBCST_PARSER_TYPE"] = "native"
@@ -70,7 +81,7 @@ def main(
 
     start_time = time.time()
 
-    codemods = gather_codemods()
+    codemods = gather_codemods(disabled=disable)
 
     log_ctx_mgr = log_file.open("a+") if log_file else nullcontext()
     partial_run_codemods = functools.partial(run_codemods, codemods, metadata_manager, scratch, package, diff)
