@@ -11,6 +11,24 @@ Bump Pydantic is a tool to help you migrate your code from Pydantic V1 to V2.
 > **Note**
 > If you find bugs, please report them on the [issue tracker](https://github.com/pydantic/bump-pydantic/issues/new).
 
+## Table of contents
+
+- [Bump Pydantic ♻️](#bump-pydantic-️)
+  - [Table of contents](#table-of-contents)
+  - [Installation](#installation)
+  - [Usage](#usage)
+    - [Check diff before applying changes](#check-diff-before-applying-changes)
+    - [Apply changes](#apply-changes)
+  - [Rules](#rules)
+    - [BP001: Add default `None` to `Optional[T]`, `Union[T, None]` and `Any` fields](#bp001-add-default-none-to-optionalt-uniont-none-and-any-fields)
+    - [BP002: Replace `Config` class by `model_config` attribute](#bp002-replace-config-class-by-model_config-attribute)
+    - [BP003: Replace `Field` old parameters to new ones](#bp003-replace-field-old-parameters-to-new-ones)
+    - [BP004: Replace imports](#bp004-replace-imports)
+    - [BP003: Replace `Config` class by `model_config`](#bp003-replace-config-class-by-model_config)
+    - [BP005: Replace `GenericModel` by `BaseModel`](#bp005-replace-genericmodel-by-basemodel)
+    - [BP006: Replace `__root__` by `RootModel`](#bp006-replace-__root__-by-rootmodel)
+  - [License](#license)
+
 ---
 
 ## Installation
