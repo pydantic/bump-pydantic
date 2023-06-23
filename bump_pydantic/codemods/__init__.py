@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import List, Type
 
 from libcst.codemod import ContextAwareTransformer
@@ -10,15 +11,37 @@ from bump_pydantic.codemods.replace_generic_model import ReplaceGenericModelComm
 from bump_pydantic.codemods.replace_imports import ReplaceImportsCodemod
 
 
-def gather_codemods() -> List[Type[ContextAwareTransformer]]:
-    return [
-        AddDefaultNoneCommand,
-        ReplaceConfigCodemod,
-        FieldCodemod,
-        ReplaceImportsCodemod,
-        ReplaceGenericModelCommand,
-        # RemoveImportsVisitor needs to be the second to last.
-        RemoveImportsVisitor,
-        # AddImportsVisitor needs to be the last.
-        AddImportsVisitor,
-    ]
+class Rule(str, Enum):
+    BP001 = "BP001"
+    """Add default `None` to `Optional[T]`, `Union[T, None]` and `Any` fields"""
+    BP002 = "BP002"
+    """Replace `Config` class with `model_config` attribute."""
+    BP003 = "BP003"
+    """Replace `Field` old parameters with new ones."""
+    BP004 = "BP004"
+    """Replace imports that have been moved."""
+    BP005 = "BP005"
+    """Replace `GenericModel` with `BaseModel`."""
+
+
+def gather_codemods(disabled: List[Rule]) -> List[Type[ContextAwareTransformer]]:
+    codemods: List[Type[ContextAwareTransformer]] = []
+
+    if Rule.BP001 not in disabled:
+        codemods.append(AddDefaultNoneCommand)
+
+    if Rule.BP002 not in disabled:
+        codemods.append(ReplaceConfigCodemod)
+
+    if Rule.BP003 not in disabled:
+        codemods.append(FieldCodemod)
+
+    if Rule.BP004 not in disabled:
+        codemods.append(ReplaceImportsCodemod)
+
+    if Rule.BP005 not in disabled:
+        codemods.append(ReplaceGenericModelCommand)
+
+    # Those codemods need to be the last ones.
+    codemods.extend([RemoveImportsVisitor, AddImportsVisitor])
+    return codemods
