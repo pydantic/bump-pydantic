@@ -208,7 +208,37 @@ class User(BaseModel, Generic[T]):
 
 ### BP006: Replace `__root__` by `RootModel`
 
-To be implemented.
+- ✅ Replace `__root__` by `RootModel`.
+
+The following code will be transformed:
+
+```py
+from typing import List
+
+from pydantic import BaseModel
+
+class User(BaseModel):
+    age: int
+    name: str
+
+class Users(BaseModel):
+    __root__ = List[User]
+```
+
+Into:
+
+```py
+from typing import List
+
+from pydantic import RootModel
+
+class User(BaseModel):
+    age: int
+    name: str
+
+class Users(RootModel[List[User]]):
+    pass
+```
 
 ---
 

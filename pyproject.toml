@@ -58,7 +58,7 @@ lint = [
   "black --check --diff {args:.}",
   "mypy {args:bump_pydantic tests}",
 ]
-format = ["ruff --fix {args:.}", "black {args:.}"]
+format = ["black {args:.}", "ruff --fix {args:.}"]
 
 [[tool.hatch.envs.all.matrix]]
 python = ["3.8", "3.9", "3.10", "3.11"]
