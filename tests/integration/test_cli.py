@@ -162,6 +162,16 @@ def before() -> Folder:
                 "    a: List[int] = Field(..., min_items=1, max_items=10)",
             ],
         ),
+        File(
+            "root_model.py",
+            content=[
+                "from pydantic import BaseModel",
+                "",
+                "",
+                "class A(BaseModel):",
+                "    __root__ = int",
+            ],
+        )
         # File(
         #     "config_dict_and_settings.py",
         #     content=[
@@ -263,6 +273,16 @@ def expected() -> Folder:
                 "",
                 "class A(BaseModel):",
                 "    a: List[int] = Field(..., min_length=1, max_length=10)",
+            ],
+        ),
+        File(
+            "root_model.py",
+            content=[
+                "from pydantic import RootModel",
+                "",
+                "",
+                "class A(RootModel[int]):",
+                "    pass",
             ],
         )
         # File(
