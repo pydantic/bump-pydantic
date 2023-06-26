@@ -36,7 +36,7 @@ Bump Pydantic is a tool to help you migrate your code from Pydantic V1 to V2.
 The installation is as simple as:
 
 ```bash
-pip install bump-pydantic
+pip install "bump-pydantic @ git+https://github.com/pydantic/bump-pydantic@main"
 ```
 
 ---
