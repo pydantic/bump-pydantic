@@ -27,6 +27,9 @@ Bump Pydantic is a tool to help you migrate your code from Pydantic V1 to V2.
     - [BP003: Replace `Config` class by `model_config`](#bp003-replace-config-class-by-model_config)
     - [BP005: Replace `GenericModel` by `BaseModel`](#bp005-replace-genericmodel-by-basemodel)
     - [BP006: Replace `__root__` by `RootModel`](#bp006-replace-__root__-by-rootmodel)
+    - [BP007: Replace decorators](#bp007-replace-decorators)
+    - [BP008: Replace `const=True` by `Literal`](#bp008-replace-consttrue-by-literal)
+    - [BP009: Replace `pydantic.parse_obj_as` by `pydantic.TypeAdapter`](#bp009-replace-pydanticparse_obj_as-by-pydantictypeadapter)
   - [License](#license)
 
 ---
@@ -238,6 +241,118 @@ class User(BaseModel):
 
 class Users(RootModel[List[User]]):
     pass
+```
+
+### BP007: Replace decorators
+
+- ✅ Replace `@validator` by `@field_validator`.
+- ✅ Replace `@root_validator` by `@model_validator`.
+
+The following code will be transformed:
+
+```py
+from pydantic import BaseModel, validator, root_validator
+
+
+class User(BaseModel):
+    name: str
+
+    @validator('name', pre=True)
+    def validate_name(cls, v):
+        return v
+
+    @root_validator(pre=True)
+    def validate_root(cls, values):
+        return values
+```
+
+Into:
+
+```py
+from pydantic import BaseModel, field_validator, model_validator
+
+
+class User(BaseModel):
+    name: str
+
+    @field_validator('name', mode='before')
+    def validate_name(cls, v):
+        return v
+
+    @model_validator(mode='before')
+    def validate_root(cls, values):
+        return values
+```
+
+### BP008: Replace `const=True` by `Literal`
+
+- ✅ Replace `field: Enum = Field(Enum.VALUE, const=True)` by `field: Literal[Enum.VALUE] = Enum.VALUE`.
+
+The following code will be transformed:
+
+```py
+from enum import Enum
+
+from pydantic import BaseModel, Field
+
+
+class User(BaseModel):
+    name: Enum = Field(Enum.VALUE, const=True)
+```
+
+Into:
+
+```py
+from enum import Enum
+
+from pydantic import BaseModel, Field
+
+
+class User(BaseModel):
+    name: Literal[Enum.VALUE] = Enum.VALUE
+```
+
+### BP009: Replace `pydantic.parse_obj_as` by `pydantic.TypeAdapter`
+
+- ✅ Replace `pydantic.parse_obj_as(T, obj)` to `pydantic.TypeAdapter(T).validate_python(obj)`.
+
+
+The following code will be transformed:
+
+```py
+from typing import List
+
+from pydantic import BaseModel, parse_obj_as
+
+
+class User(BaseModel):
+    name: str
+
+
+class Users(BaseModel):
+    users: List[User]
+
+
+users = parse_obj_as(Users, {'users': [{'name': 'John'}]})
+```
+
+Into:
+
+```py
+from typing import List
+
+from pydantic import BaseModel, TypeAdapter
+
+
+class User(BaseModel):
+    name: str
+
+
+class Users(BaseModel):
+    users: List[User]
+
+
+users = TypeAdapter(Users).validate_python({'users': [{'name': 'John'}]})
 ```
 
 ---
