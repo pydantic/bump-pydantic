@@ -4,7 +4,7 @@ from libcst.codemod import CodemodTest
 from bump_pydantic.codemods.field import FieldCodemod
 
 
-class TestReplaceConfigCommand(CodemodTest):
+class TestFieldCommand(CodemodTest):
     TRANSFORM = FieldCodemod
 
     maxDiff = None

@@ -10,6 +10,7 @@ from bump_pydantic.codemods.replace_config import ReplaceConfigCodemod
 from bump_pydantic.codemods.replace_generic_model import ReplaceGenericModelCommand
 from bump_pydantic.codemods.replace_imports import ReplaceImportsCodemod
 from bump_pydantic.codemods.root_model import RootModelCommand
+from bump_pydantic.codemods.validator import ValidatorCodemod
 
 
 class Rule(str, Enum):
@@ -25,6 +26,8 @@ class Rule(str, Enum):
     """Replace `GenericModel` with `BaseModel`."""
     BP006 = "BP006"
     """Replace `BaseModel.__root__ = T` with `RootModel[T]`."""
+    BP007 = "BP007"
+    """Replace `@validator` with `@field_validator`."""
 
 
 def gather_codemods(disabled: List[Rule]) -> List[Type[ContextAwareTransformer]]:
@@ -47,6 +50,9 @@ def gather_codemods(disabled: List[Rule]) -> List[Type[ContextAwareTransformer]]
 
     if Rule.BP006 not in disabled:
         codemods.append(RootModelCommand)
+
+    if Rule.BP007 not in disabled:
+        codemods.append(ValidatorCodemod)
 
     # Those codemods need to be the last ones.
     codemods.extend([RemoveImportsVisitor, AddImportsVisitor])
