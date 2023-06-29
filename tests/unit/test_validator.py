@@ -350,3 +350,24 @@ class TestValidatorCommand(CodemodTest):
                 return values
         """
         self.assertCodemod(before, after)
+
+    def test_noop_comment(self) -> None:
+        code = """
+        import typing as t
+
+        from pydantic import BaseModel, validator
+
+
+        class Potato(BaseModel):
+            name: str
+            dialect: str
+
+            # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
+            # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
+            @validator("name", "dialect")
+            def _string_validator(cls, v: t.Any, values: t.Dict[str, t.Any], **kwargs) -> t.Optional[str]:
+                if isinstance(v, exp.Expression):
+                    return v.name.lower()
+                return str(v).lower() if v is not None else None
+        """
+        self.assertCodemod(code, code)
