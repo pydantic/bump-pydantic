@@ -28,7 +28,6 @@ Bump Pydantic is a tool to help you migrate your code from Pydantic V1 to V2.
     - [BP005: Replace `GenericModel` by `BaseModel`](#bp005-replace-genericmodel-by-basemodel)
     - [BP006: Replace `__root__` by `RootModel`](#bp006-replace-__root__-by-rootmodel)
     - [BP007: Replace decorators](#bp007-replace-decorators)
-    - [BP008: Replace `const=True` by `Literal`](#bp008-replace-consttrue-by-literal)
     - [BP009: Replace `pydantic.parse_obj_as` by `pydantic.TypeAdapter`](#bp009-replace-pydanticparse_obj_as-by-pydantictypeadapter)
   - [License](#license)
 
@@ -129,6 +128,7 @@ class User(BaseModel):
 ### BP003: Replace `Field` old parameters to new ones
 
 - ✅ Replace `Field` old parameters to new ones.
+- ✅ Replace `field: Enum = Field(Enum.VALUE, const=True)` by `field: Literal[Enum.VALUE] = Enum.VALUE`.
 
 The following code will be transformed:
 
@@ -282,34 +282,6 @@ class User(BaseModel):
     @model_validator(mode='before')
     def validate_root(cls, values):
         return values
-```
-
-### BP008: Replace `const=True` by `Literal`
-
-- ✅ Replace `field: Enum = Field(Enum.VALUE, const=True)` by `field: Literal[Enum.VALUE] = Enum.VALUE`.
-
-The following code will be transformed:
-
-```py
-from enum import Enum
-
-from pydantic import BaseModel, Field
-
-
-class User(BaseModel):
-    name: Enum = Field(Enum.VALUE, const=True)
-```
-
-Into:
-
-```py
-from enum import Enum
-
-from pydantic import BaseModel, Field
-
-
-class User(BaseModel):
-    name: Literal[Enum.VALUE] = Enum.VALUE
 ```
 
 ### BP009: Replace `pydantic.parse_obj_as` by `pydantic.TypeAdapter`
