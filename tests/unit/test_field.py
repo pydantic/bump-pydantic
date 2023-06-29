@@ -74,3 +74,31 @@ class TestFieldCommand(CodemodTest):
             potato: int = Field(..., env="POTATO")
         """
         self.assertCodemod(code, code)
+
+    def test_replace_const_by_literal_type(self) -> None:
+        before = """
+        from enum import Enum
+
+        from pydantic import BaseModel, Field
+
+
+        class MyEnum(Enum):
+            POTATO = "potato"
+
+        class Potato(BaseModel):
+            potato: MyEnum = Field(MyEnum.POTATO, const=True)
+        """
+        after = """
+        from enum import Enum
+
+        from pydantic import BaseModel
+        from typing import Literal
+
+
+        class MyEnum(Enum):
+            POTATO = "potato"
+
+        class Potato(BaseModel):
+            potato: Literal[MyEnum.POTATO] = MyEnum.POTATO
+        """
+        self.assertCodemod(before, after)

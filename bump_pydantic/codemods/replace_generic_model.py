@@ -18,7 +18,7 @@ class ReplaceGenericModelCommand(VisitorBasedCodemodCommand):
         AddImportsVisitor.add_needed_import(context=self.context, module="pydantic", obj="BaseModel")
         return updated_node.with_changes(
             bases=[
-                base if not m.matches(base, GENERIC_MODEL_ARG) else cst.Arg(value=cst.Name("BaseModel"))
+                cst.Arg(value=cst.Name("BaseModel")) if m.matches(base, GENERIC_MODEL_ARG) else base
                 for base in updated_node.bases
             ]
         )

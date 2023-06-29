@@ -1,9 +1,9 @@
-from typing import List
+from typing import List, Union
 
 import libcst as cst
 from libcst import matchers as m
 from libcst.codemod import CodemodContext, VisitorBasedCodemodCommand
-from libcst.codemod.visitors import AddImportsVisitor
+from libcst.codemod.visitors import AddImportsVisitor, RemoveImportsVisitor
 
 RENAMED_KEYWORDS = {
     "min_items": "min_length",
@@ -63,11 +63,33 @@ class FieldCodemod(VisitorBasedCodemodCommand):
     @m.visit(m.AnnAssign(value=m.Call(func=m.Name("Field"))))
     def visit_field_assign(self, node: cst.AnnAssign) -> None:
         self.inside_field_assign = True
+        self._const: Union[cst.Arg, None] = None
 
     @m.leave(m.AnnAssign(value=m.Call(func=m.Name("Field"))))
     def leave_field_assign(self, original_node: cst.AnnAssign, updated_node: cst.AnnAssign) -> cst.AnnAssign:
         self.inside_field_assign = False
-        return updated_node
+
+        if self._const is None:
+            return updated_node
+
+        AddImportsVisitor.add_needed_import(self.context, "typing", "Literal")
+        RemoveImportsVisitor.remove_unused_import(self.context, "pydantic", "Field")
+        return updated_node.with_changes(
+            annotation=cst.Annotation(
+                annotation=cst.Subscript(
+                    value=cst.Name("Literal"),
+                    slice=[cst.SubscriptElement(slice=cst.Index(value=self._const.value))],
+                )
+            ),
+            value=self._const.value,
+        )
+
+    @m.visit(m.Call(func=m.Name("Field")))
+    def visit_field_call(self, node: cst.Call) -> None:
+        # Check if there's a `const=True` argument.
+        const_arg = m.Arg(value=m.Name("True"), keyword=m.Name("const"))
+        if m.matches(node, m.Call(func=m.Name("Field"), args=[~m.Arg(value=m.Name("...")), const_arg])):
+            self._const = node.args[0]
 
     @m.leave(m.Call(func=m.Name("Field")))
     def leave_field_call(self, original_node: cst.Call, updated_node: cst.Call) -> cst.Call:
