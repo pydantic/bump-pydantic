@@ -130,7 +130,7 @@ class TestReplaceConfigCommand(CodemodTest):
         """
         self.assertCodemod(before, after)
 
-    @pytest.mark.xfail(reason="Not implemented yet")
+    @pytest.mark.xfail(reason="Comments inside Config are swallowed.")
     def test_inner_comments(self) -> None:
         before = """
         from pydantic import BaseModel
@@ -176,7 +176,6 @@ class TestReplaceConfigCommand(CodemodTest):
         """
         self.assertCodemod(before, after)
 
-    @pytest.mark.xfail(reason="Not implemented yet")
     def test_extra_enum(self) -> None:
         before = """
         from pydantic import BaseModel, Extra
@@ -186,7 +185,7 @@ class TestReplaceConfigCommand(CodemodTest):
                 extra = Extra.allow
         """
         after = """
-        from pydantic import BaseModel
+        from pydantic import ConfigDict, BaseModel
 
         class Potato(BaseModel):
             model_config = ConfigDict(extra="allow")
