@@ -129,15 +129,6 @@ def before() -> Folder:
                 "        ...",
             ],
         ),
-        # File(
-        #     "rename_method.py",
-        #     content=[
-        #         "from project.add_none import A",
-        #         "",
-        #         'a = A(a=1, b=2, c=3, d=4, e={"ha": "ha"})',
-        #         "a.dict()",
-        #     ],
-        # ),
         File(
             "replace_generic.py",
             content=[
@@ -206,21 +197,21 @@ def before() -> Folder:
                 "    a: A = Field(A.a, const=True)",
             ],
         ),
-        # File(
-        #     "config_dict_and_settings.py",
-        #     content=[
-        #         "from pydantic import BaseModel, BaseSettings",
-        #         "",
-        #         "",
-        #         "class Settings(BaseSettings):",
-        #         "    sentry_dsn: str",
-        #         "",
-        #         "",
-        #         "class A(BaseModel):",
-        #         "    class Config:",
-        #         "        orm_mode = True",
-        #     ]
-        # )
+        File(
+            "config_dict_and_settings.py",
+            content=[
+                "from pydantic import BaseModel, BaseSettings",
+                "",
+                "",
+                "class Settings(BaseSettings):",
+                "    sentry_dsn: str",
+                "",
+                "",
+                "class A(BaseModel):",
+                "    class Config:",
+                "        orm_mode = True",
+            ],
+        ),
     )
 
 
@@ -277,15 +268,6 @@ def expected() -> Folder:
                 "        ...",
             ],
         ),
-        # File(
-        #     "rename_method.py",
-        #     content=[
-        #         "from project.add_none import A",
-        #         "",
-        #         'a = A(a=1, b=2, c=3, d=4, e={"ha": "ha"})',
-        #         "a.dict()",
-        #     ],
-        # ),
         File(
             "replace_generic.py",
             content=[
@@ -356,21 +338,21 @@ def expected() -> Folder:
                 "    a: Literal[A.a] = A.a",
             ],
         ),
-        # File(
-        #     "config_dict_and_settings.py",
-        #     content=[
-        #         "from pydantic import ConfigDict, BaseModel",
-        #         "from pydantic_settings import BaseSettings",
-        #         "",
-        #         "",
-        #         "class Settings(BaseSettings):",
-        #         "    sentry_dsn: str",
-        #         "",
-        #         "",
-        #         "class A(BaseModel):",
-        #         "    model_config = ConfigDict(orm_mode=True)",
-        #     ]
-        # )
+        File(
+            "config_dict_and_settings.py",
+            content=[
+                "from pydantic import ConfigDict, BaseModel",
+                "from pydantic_settings import BaseSettings",
+                "",
+                "",
+                "class Settings(BaseSettings):",
+                "    sentry_dsn: str",
+                "",
+                "",
+                "class A(BaseModel):",
+                "    model_config = ConfigDict(from_attributes=True)",
+            ],
+        ),
     )
 
 
