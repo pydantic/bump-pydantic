@@ -105,6 +105,7 @@ class ReplaceImportsCodemod(VisitorBasedCodemodCommand):
                 AddImportsVisitor.add_needed_import(self.context, *import_info.to_import_str)
                 if len(updated_node.names) > 1:  # type: ignore
                     names = [alias for alias in aliases if alias.name.value != import_info.to_import_str[-1]]
+                    names[-1] = names[-1].with_changes(comma=cst.MaybeSentinel.DEFAULT)
                     updated_node = updated_node.with_changes(names=names)
                 else:
                     return cst.RemoveFromParent()  # type: ignore[return-value]
