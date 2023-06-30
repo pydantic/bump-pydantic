@@ -66,6 +66,7 @@ class ValidatorCodemod(VisitorBasedCodemodCommand):
         self._import_pydantic_validator = self._import_pydantic_root_validator = False
         self._already_modified = False
         self._should_add_comment = False
+        self._has_comment = False
         self._args: List[cst.Arg] = []
 
     @m.visit(IMPORT_VALIDATOR)
@@ -104,15 +105,17 @@ class ValidatorCodemod(VisitorBasedCodemodCommand):
 
     @m.visit(VALIDATOR_FUNCTION)
     def visit_validator_func(self, node: cst.FunctionDef) -> None:
+        for line in node.leading_lines:
+            if m.matches(line, m.EmptyLine(comment=m.Comment(value=CHECK_LINK_COMMENT))):
+                self._has_comment = True
         # We are only able to refactor the `@validator` when the function has only `cls` and `v` as arguments.
         if len(node.params.params) > 2:
             self._should_add_comment = True
 
     @m.leave(ROOT_VALIDATOR_DECORATOR)
     def leave_root_validator_func(self, original_node: cst.Decorator, updated_node: cst.Decorator) -> cst.Decorator:
-        for line in updated_node.leading_lines:
-            if m.matches(line, m.EmptyLine(comment=m.Comment(value=CHECK_LINK_COMMENT))):
-                return updated_node
+        if self._has_comment:
+            return updated_node
 
         if self._should_add_comment:
             return self._decorator_with_leading_comment(updated_node, ROOT_VALIDATOR_COMMENT)
@@ -121,9 +124,8 @@ class ValidatorCodemod(VisitorBasedCodemodCommand):
 
     @m.leave(VALIDATOR_DECORATOR)
     def leave_validator_decorator(self, original_node: cst.Decorator, updated_node: cst.Decorator) -> cst.Decorator:
-        for line in updated_node.leading_lines:
-            if m.matches(line, m.EmptyLine(comment=m.Comment(value=CHECK_LINK_COMMENT))):
-                return updated_node
+        if self._has_comment:
+            return updated_node
 
         if self._should_add_comment:
             return self._decorator_with_leading_comment(updated_node, VALIDATOR_COMMENT)
@@ -133,9 +135,11 @@ class ValidatorCodemod(VisitorBasedCodemodCommand):
     @m.leave(VALIDATOR_FUNCTION | ROOT_VALIDATOR_FUNCTION)
     def leave_validator_func(self, original_node: cst.FunctionDef, updated_node: cst.FunctionDef) -> cst.FunctionDef:
         self._args = []
+        self._has_comment = False
         if self._should_add_comment:
             self._should_add_comment = False
             return updated_node
+
         classmethod_decorator = cst.Decorator(decorator=cst.Name("classmethod"))
         return updated_node.with_changes(decorators=[*updated_node.decorators, classmethod_decorator])
 
