@@ -5,7 +5,7 @@ import os
 import time
 from contextlib import nullcontext
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, List, Type, TypeVar, Union
+from typing import Any, Callable, Dict, Iterable, List, Set, Type, TypeVar, Union
 
 import libcst as cst
 from libcst.codemod import CodemodContext, ContextAwareTransformer
@@ -19,7 +19,6 @@ from typing_extensions import ParamSpec
 from bump_pydantic import __version__
 from bump_pydantic.codemods import Rule, gather_codemods
 from bump_pydantic.codemods.class_def_visitor import ClassDefVisitor
-from bump_pydantic.markers.find_base_model import find_base_model
 
 app = Typer(
     help="Convert Pydantic from V1 to V2 ♻️",
@@ -65,14 +64,39 @@ def main(
     scratch: dict[str, Any] = {}
     with Progress(*Progress.get_default_columns(), transient=True) as progress:
         task = progress.add_task(description="Looking for Pydantic Models...", total=len(files))
-        with multiprocessing.Pool() as pool:
-            partial_visit_class_def = functools.partial(visit_class_def, metadata_manager, package)
-            for local_scratch in pool.imap_unordered(partial_visit_class_def, files):
-                progress.advance(task)
-                for key, value in local_scratch.items():
-                    scratch.setdefault(key, value).update(value)
 
-    find_base_model(scratch)
+        queue: List[str] = [files[0]]
+        visited: Set[str] = set()
+
+        while queue:
+            # Queue logic
+            filename = queue.pop()
+            visited.add(filename)
+            progress.advance(task)
+
+            # Visitor logic
+            code = Path(filename).read_text()
+            module = cst.parse_module(code)
+            module_and_package = calculate_module_and_package(str(package), filename)
+
+            context = CodemodContext(
+                metadata_manager=metadata_manager,
+                filename=filename,
+                full_module_name=module_and_package.name,
+                full_package_name=module_and_package.package,
+                scratch=scratch,
+            )
+            visitor = ClassDefVisitor(context=context)
+            visitor.transform_module(module)
+
+            # Queue logic
+            next_file = visitor.next_file(visited)
+            if next_file is not None:
+                queue.append(next_file)
+
+            missing_files = set(files) - visited
+            if not queue and missing_files:
+                queue.append(next(iter(missing_files)))
 
     start_time = time.time()
 
@@ -102,6 +126,20 @@ def main(
         print(f"Refactored {len(modified)} files.")
 
 
+def capture_exception(func: Callable[P, T]) -> Callable[P, Union[T, Iterable[str]]]:
+    @functools.wraps(func)
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> Union[T, Iterable[str]]:
+        try:
+            return func(*args, **kwargs)
+        except Exception as exc:
+            func_args = [repr(arg) for arg in args]
+            func_kwargs = [f"{key}={repr(value)}" for key, value in kwargs.items()]
+            return [f"{func.__name__}({', '.join(func_args + func_kwargs)})\n{exc}"]
+
+    return wrapper
+
+
+@capture_exception
 def visit_class_def(metadata_manager: FullRepoManager, package: Path, filename: str) -> Dict[str, Any]:
     code = Path(filename).read_text()
     module = cst.parse_module(code)
@@ -116,19 +154,6 @@ def visit_class_def(metadata_manager: FullRepoManager, package: Path, filename: 
     visitor = ClassDefVisitor(context=context)
     visitor.transform_module(module)
     return context.scratch
-
-
-def capture_exception(func: Callable[P, T]) -> Callable[P, Union[T, Iterable[str]]]:
-    @functools.wraps(func)
-    def wrapper(*args: P.args, **kwargs: P.kwargs) -> Union[T, Iterable[str]]:
-        try:
-            return func(*args, **kwargs)
-        except Exception as exc:
-            func_args = [repr(arg) for arg in args]
-            func_kwargs = [f"{key}={repr(value)}" for key, value in kwargs.items()]
-            return [f"{func.__name__}({', '.join(func_args + func_kwargs)})\n{exc}"]
-
-    return wrapper
 
 
 @capture_exception

@@ -10,7 +10,6 @@ from libcst.testing.utils import UnitTest
 
 from bump_pydantic.codemods.add_default_none import AddDefaultNoneCommand
 from bump_pydantic.codemods.class_def_visitor import ClassDefVisitor
-from bump_pydantic.markers.find_base_model import find_base_model
 
 
 class TestClassDefVisitor(UnitTest):
@@ -27,8 +26,6 @@ class TestClassDefVisitor(UnitTest):
         context = CodemodContext(wrapper=mod)
         instance = ClassDefVisitor(context=context)
         mod.visit(instance)
-
-        find_base_model(scratch=context.scratch)
 
         instance = AddDefaultNoneCommand(context=context)  # type: ignore[assignment]
         return mod.visit(instance)

@@ -31,8 +31,8 @@ class TestClassDefVisitor(UnitTest):
                 pass
             """,
         )
-        results = visitor.context.scratch[ClassDefVisitor.CONTEXT_KEY]
-        self.assertEqual(results, {})
+        results = visitor.context.scratch[ClassDefVisitor.BASE_MODEL_CONTEXT_KEY]
+        self.assertEqual(results, {"pydantic.BaseModel", "pydantic.main.BaseModel"})
 
     def test_without_bases(self) -> None:
         visitor = self.gather_class_def(
@@ -42,8 +42,8 @@ class TestClassDefVisitor(UnitTest):
                 pass
             """,
         )
-        results = visitor.context.scratch[ClassDefVisitor.CONTEXT_KEY]
-        self.assertEqual(results, {})
+        results = visitor.context.scratch[ClassDefVisitor.BASE_MODEL_CONTEXT_KEY]
+        self.assertEqual(results, {"pydantic.BaseModel", "pydantic.main.BaseModel"})
 
     def test_with_class_defs(self) -> None:
         visitor = self.gather_class_def(
@@ -58,13 +58,9 @@ class TestClassDefVisitor(UnitTest):
                 pass
             """,
         )
-        results = visitor.context.scratch[ClassDefVisitor.CONTEXT_KEY]
+        results = visitor.context.scratch[ClassDefVisitor.BASE_MODEL_CONTEXT_KEY]
         self.assertEqual(
-            results,
-            {
-                "some.test.module.Foo": {"pydantic.BaseModel"},
-                "some.test.module.Bar": {"some.test.module.Foo"},
-            },
+            results, {"pydantic.BaseModel", "pydantic.main.BaseModel", "some.test.module.Foo", "some.test.module.Bar"}
         )
 
     def test_with_pydantic_base_model(self) -> None:
@@ -77,8 +73,5 @@ class TestClassDefVisitor(UnitTest):
                 ...
             """,
         )
-        results = visitor.context.scratch[ClassDefVisitor.CONTEXT_KEY]
-        self.assertEqual(
-            results,
-            {"some.test.module.Foo": {"pydantic.BaseModel"}},
-        )
+        results = visitor.context.scratch[ClassDefVisitor.BASE_MODEL_CONTEXT_KEY]
+        self.assertEqual(results, {"pydantic.BaseModel", "pydantic.main.BaseModel", "some.test.module.Foo"})
