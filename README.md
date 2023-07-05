@@ -27,7 +27,7 @@ Bump Pydantic is a tool to help you migrate your code from Pydantic V1 to V2.
     - [BP005: Replace `GenericModel` by `BaseModel`](#bp005-replace-genericmodel-by-basemodel)
     - [BP006: Replace `__root__` by `RootModel`](#bp006-replace-__root__-by-rootmodel)
     - [BP007: Replace decorators](#bp007-replace-decorators)
-    - [BP008: Replace `pydantic.parse_obj_as` by `pydantic.TypeAdapter`](#bp008-replace-pydanticparse_obj_as-by-pydantictypeadapter)
+    <!-- - [BP008: Replace `pydantic.parse_obj_as` by `pydantic.TypeAdapter`](#bp008-replace-pydanticparse_obj_as-by-pydantictypeadapter) -->
   - [License](#license)
 
 ---
@@ -260,6 +260,7 @@ class User(BaseModel):
         return values
 ```
 
+<!--
 ### BP008: Replace `pydantic.parse_obj_as` by `pydantic.TypeAdapter`
 
 - ✅ Replace `pydantic.parse_obj_as(T, obj)` to `pydantic.TypeAdapter(T).validate_python(obj)`.
@@ -302,6 +303,7 @@ class Users(BaseModel):
 
 users = TypeAdapter(Users).validate_python({'users': [{'name': 'John'}]})
 ```
+-->
 
 ---
 
