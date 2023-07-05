@@ -24,7 +24,6 @@ Bump Pydantic is a tool to help you migrate your code from Pydantic V1 to V2.
     - [BP002: Replace `Config` class by `model_config` attribute](#bp002-replace-config-class-by-model_config-attribute)
     - [BP003: Replace `Field` old parameters to new ones](#bp003-replace-field-old-parameters-to-new-ones)
     - [BP004: Replace imports](#bp004-replace-imports)
-    - [BP003: Replace `Config` class by `model_config`](#bp003-replace-config-class-by-model_config)
     - [BP005: Replace `GenericModel` by `BaseModel`](#bp005-replace-genericmodel-by-basemodel)
     - [BP006: Replace `__root__` by `RootModel`](#bp006-replace-__root__-by-rootmodel)
     - [BP007: Replace decorators](#bp007-replace-decorators)
@@ -158,29 +157,6 @@ class User(BaseModel):
 
 - ✅ Replace `BaseSettings` from `pydantic` to `pydantic_settings`.
 - ✅ Replace `Color` and `PaymentCardNumber` from `pydantic` to `pydantic_extra_types`.
-
-### BP003: Replace `Config` class by `model_config`
-
-- ✅ Replace `Config` class by `model_config = ConfigDict()`.
-
-The following code will be transformed:
-
-```py
-class User(BaseModel):
-    name: str
-
-    class Config:
-        extra = 'forbid'
-```
-
-Into:
-
-```py
-class User(BaseModel):
-    name: str
-
-    model_config = ConfigDict(extra='forbid')
-```
 
 ### BP005: Replace `GenericModel` by `BaseModel`
 
