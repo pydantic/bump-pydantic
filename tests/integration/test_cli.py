@@ -483,6 +483,7 @@ def test_command_line(tmp_path: Path, before: Folder, expected: Folder) -> None:
         before.create_structure(root=Path(td))
 
         result = runner.invoke(app, [before.name])
+        print(result.output)
         assert result.exit_code == 0, result.output
         # assert result.output.endswith("Refactored 4 files.\n")
 

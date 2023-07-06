@@ -5,7 +5,7 @@ import os
 import time
 from contextlib import nullcontext
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, List, Set, Type, TypeVar, Union
+from typing import Any, Callable, Dict, Iterable, List, Type, TypeVar, Union
 
 import libcst as cst
 from libcst.codemod import CodemodContext, ContextAwareTransformer
@@ -18,7 +18,7 @@ from typing_extensions import ParamSpec
 
 from bump_pydantic import __version__
 from bump_pydantic.codemods import Rule, gather_codemods
-from bump_pydantic.codemods.class_def_visitor import ClassDefVisitor
+from bump_pydantic.codemods.mypy_visitor import CONTEXT_KEY, run_mypy_visitor
 
 app = Typer(
     help="Convert Pydantic from V1 to V2 ♻️",
@@ -61,42 +61,8 @@ def main(
     metadata_manager = FullRepoManager(".", files, providers=providers)  # type: ignore[arg-type]
     metadata_manager.resolve_cache()
 
-    scratch: dict[str, Any] = {}
-    with Progress(*Progress.get_default_columns(), transient=True) as progress:
-        task = progress.add_task(description="Looking for Pydantic Models...", total=len(files))
-
-        queue: List[str] = [files[0]]
-        visited: Set[str] = set()
-
-        while queue:
-            # Queue logic
-            filename = queue.pop()
-            visited.add(filename)
-            progress.advance(task)
-
-            # Visitor logic
-            code = Path(filename).read_text()
-            module = cst.parse_module(code)
-            module_and_package = calculate_module_and_package(str(package), filename)
-
-            context = CodemodContext(
-                metadata_manager=metadata_manager,
-                filename=filename,
-                full_module_name=module_and_package.name,
-                full_package_name=module_and_package.package,
-                scratch=scratch,
-            )
-            visitor = ClassDefVisitor(context=context)
-            visitor.transform_module(module)
-
-            # Queue logic
-            next_file = visitor.next_file(visited)
-            if next_file is not None:
-                queue.append(next_file)
-
-            missing_files = set(files) - visited
-            if not queue and missing_files:
-                queue.append(next(iter(missing_files)))
+    classes = run_mypy_visitor(files, console=console)
+    scratch: dict[str, Any] = {CONTEXT_KEY: classes}
 
     start_time = time.time()
 
@@ -108,7 +74,7 @@ def main(
     with Progress(*Progress.get_default_columns(), transient=True) as progress:
         task = progress.add_task(description="Executing codemods...", total=len(files))
         with multiprocessing.Pool() as pool, log_ctx_mgr as log_fp:  # type: ignore[attr-defined]
-            for error_msg in pool.imap_unordered(partial_run_codemods, files):
+            for error_msg in pool.imap(partial_run_codemods, files):
                 progress.advance(task)
                 if error_msg is None:
                     continue
@@ -137,23 +103,6 @@ def capture_exception(func: Callable[P, T]) -> Callable[P, Union[T, Iterable[str
             return [f"{func.__name__}({', '.join(func_args + func_kwargs)})\n{exc}"]
 
     return wrapper
-
-
-@capture_exception
-def visit_class_def(metadata_manager: FullRepoManager, package: Path, filename: str) -> Dict[str, Any]:
-    code = Path(filename).read_text()
-    module = cst.parse_module(code)
-    module_and_package = calculate_module_and_package(str(package), filename)
-
-    context = CodemodContext(
-        metadata_manager=metadata_manager,
-        filename=filename,
-        full_module_name=module_and_package.name,
-        full_package_name=module_and_package.package,
-    )
-    visitor = ClassDefVisitor(context=context)
-    visitor.transform_module(module)
-    return context.scratch
 
 
 @capture_exception
