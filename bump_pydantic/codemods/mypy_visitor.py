@@ -7,7 +7,6 @@ from mypy.build import build
 from mypy.main import process_options
 from mypy.nodes import ClassDef
 from mypy.traverser import TraverserVisitor
-from rich.console import Console
 
 CONTEXT_KEY = "mypy_visitor"
 
@@ -22,8 +21,7 @@ class MyPyVisitor(TraverserVisitor):
         self.classes[o.fullname] = o.info.has_base("pydantic.main.BaseModel")
 
 
-def run_mypy_visitor(arg_files: list[str], console: Console | None = None) -> dict[str, bool]:
-    console = console or Console()
+def run_mypy_visitor(arg_files: list[str]) -> dict[str, bool]:
     files, opt = process_options(arg_files, stdout=sys.stdout, stderr=sys.stderr)
 
     opt.export_types = True
@@ -33,7 +31,6 @@ def run_mypy_visitor(arg_files: list[str], console: Console | None = None) -> di
     opt.allow_redefinition = True
     opt.local_partial_types = True
 
-    console.print("Running MyPy - this may take a while...")
     result = build(files, opt, stdout=sys.stdout, stderr=sys.stderr)
 
     visitor = MyPyVisitor()
