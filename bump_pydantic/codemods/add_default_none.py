@@ -56,7 +56,7 @@ class AddDefaultNoneCommand(VisitorBasedCodemodCommand):
         self.inside_base_model = False
         return updated_node
 
-    def visit_AnnAssign(self, node: cst.AnnAssign) -> bool | None:
+    def visit_AnnAssign(self, node: cst.AnnAssign) -> None:
         if m.matches(
             node.annotation.annotation,
             m.Subscript(m.Name("Optional") | m.Attribute(m.Name("typing"), m.Name("Optional")))
@@ -75,11 +75,29 @@ class AddDefaultNoneCommand(VisitorBasedCodemodCommand):
             | m.BinaryOperation(operator=m.BitOr(), right=m.Name("None")),
         ):
             self.should_add_none = True
-        return super().visit_AnnAssign(node)
+        return None
 
     def leave_AnnAssign(self, original_node: cst.AnnAssign, updated_node: cst.AnnAssign) -> cst.AnnAssign:
-        if self.inside_base_model and self.should_add_none and updated_node.value is None:
-            updated_node = updated_node.with_changes(value=cst.Name("None"))
+        if self.inside_base_model and self.should_add_none:
+            if updated_node.value is None:
+                updated_node = updated_node.with_changes(value=cst.Name("None"))
+            # TODO: Should accept `pydantic.Field` as well.
+            elif m.matches(updated_node.value, m.Call(func=m.Name("Field"))):
+                assert isinstance(updated_node.value, cst.Call)
+                if updated_node.value.args:
+                    arg = updated_node.value.args[0]
+                    if (arg.keyword is None or arg.keyword.value == "default") and m.matches(arg.value, m.Ellipsis()):
+                        updated_node = updated_node.with_changes(
+                            value=updated_node.value.with_changes(
+                                args=[arg.with_changes(value=cst.Name("None")), *updated_node.value.args[1:]]
+                            )
+                        )
+                # This is the case where `Field` is called without any arguments e.g. `Field()`.
+                else:
+                    updated_node = updated_node.with_changes(
+                        value=updated_node.value.with_changes(args=[cst.Arg(value=cst.Name("None"))])  # type: ignore
+                    )
+
         self.inside_an_assign = False
         self.should_add_none = False
         return updated_node
