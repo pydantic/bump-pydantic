@@ -102,3 +102,20 @@ class TestFieldCommand(CodemodTest):
             potato: Literal[MyEnum.POTATO] = MyEnum.POTATO
         """
         self.assertCodemod(before, after)
+
+    def test_flip_frozen_boolean(self) -> None:
+        before = """
+        from pydantic import BaseSettings, Field
+
+        class Settings(BaseSettings):
+            potato: int = Field(..., allow_mutation=False)
+            strawberry: int = Field(..., allow_mutation=True)
+        """
+        after = """
+        from pydantic import BaseSettings, Field
+
+        class Settings(BaseSettings):
+            potato: int = Field(..., frozen=True)
+            strawberry: int = Field(..., frozen=False)
+        """
+        self.assertCodemod(before, after)

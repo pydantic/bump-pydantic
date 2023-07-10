@@ -100,7 +100,15 @@ class FieldCodemod(VisitorBasedCodemodCommand):
         for arg in updated_node.args:
             if m.matches(arg, m.Arg(keyword=m.Name())):
                 keyword = RENAMED_KEYWORDS.get(arg.keyword.value, arg.keyword.value)  # type: ignore
-                new_args.append(arg.with_changes(keyword=arg.keyword.with_changes(value=keyword)))  # type: ignore
+                value = arg.value
+                # The `allow_mutation` keyword argument is a special case. It's the negative of `frozen`.
+                if arg.keyword and arg.keyword.value == "allow_mutation":
+                    if m.matches(arg.value, m.Name(value="False")):
+                        value = cst.Name("True")
+                    elif m.matches(arg.value, m.Name(value="True")):
+                        value = cst.Name("False")
+                new_arg = arg.with_changes(keyword=arg.keyword.with_changes(value=keyword), value=value)  # type: ignore
+                new_args.append(new_arg)  # type: ignore
             else:
                 new_args.append(arg)
 
