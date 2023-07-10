@@ -119,3 +119,20 @@ class TestFieldCommand(CodemodTest):
             strawberry: int = Field(..., frozen=False)
         """
         self.assertCodemod(before, after)
+
+    def test_annotated_field(self) -> None:
+        before = """
+        from pydantic import BaseModel, Field
+        from typing import Annotated
+
+        class Potato(BaseModel):
+            potato: Annotated[List[int], Field(..., min_items=1, max_items=10)]
+        """
+        after = """
+        from pydantic import BaseModel, Field
+        from typing import Annotated
+
+        class Potato(BaseModel):
+            potato: Annotated[List[int], Field(..., min_length=1, max_length=10)]
+        """
+        self.assertCodemod(before, after)

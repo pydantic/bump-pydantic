@@ -43,6 +43,20 @@ IMPORT_FIELD = m.Module(
     ]
 )
 
+ANN_ASSIGN_WITH_FIELD = m.AnnAssign(
+    value=m.Call(func=m.Name("Field")),
+) | m.AnnAssign(
+    annotation=m.Annotation(
+        annotation=m.Subscript(
+            slice=[
+                m.ZeroOrMore(),
+                m.SubscriptElement(slice=m.Index(value=m.Call(func=m.Name("Field")))),
+                m.ZeroOrMore(),
+            ]
+        )
+    )
+)
+
 
 class FieldCodemod(VisitorBasedCodemodCommand):
     def __init__(self, context: CodemodContext) -> None:
@@ -60,12 +74,12 @@ class FieldCodemod(VisitorBasedCodemodCommand):
         self.has_field_import = False
         return updated_node
 
-    @m.visit(m.AnnAssign(value=m.Call(func=m.Name("Field"))))
+    @m.visit(ANN_ASSIGN_WITH_FIELD)
     def visit_field_assign(self, node: cst.AnnAssign) -> None:
         self.inside_field_assign = True
         self._const: Union[cst.Arg, None] = None
 
-    @m.leave(m.AnnAssign(value=m.Call(func=m.Name("Field"))))
+    @m.leave(ANN_ASSIGN_WITH_FIELD)
     def leave_field_assign(self, original_node: cst.AnnAssign, updated_node: cst.AnnAssign) -> cst.AnnAssign:
         self.inside_field_assign = False
 
@@ -124,10 +138,12 @@ if __name__ == "__main__":
 
     source = textwrap.dedent(
         """
+        from typing import Annotated
+
         from pydantic import BaseModel, Field
 
         class A(BaseModel):
-            a: List[str] = Field(..., description="My description", min_items=1)
+            a: Annotated[List[str], Field(..., description="My description", min_items=1)]
         """
     )
     console.print(source)
