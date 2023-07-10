@@ -5,9 +5,7 @@ import libcst.matchers as m
 from libcst.codemod import CodemodContext, VisitorBasedCodemodCommand
 from libcst.metadata import FullyQualifiedNameProvider, QualifiedName
 
-from bump_pydantic.codemods.class_def_visitor import ClassDefVisitor
-from bump_pydantic.markers.find_base_model import CONTEXT_KEY as BASE_MODEL_CONTEXT_KEY
-from bump_pydantic.markers.find_base_model import find_base_model
+from bump_pydantic.codemods.mypy_visitor import CONTEXT_KEY
 
 
 class AddDefaultNoneCommand(VisitorBasedCodemodCommand):
@@ -51,7 +49,7 @@ class AddDefaultNoneCommand(VisitorBasedCodemodCommand):
             return None
 
         fqn: QualifiedName = next(iter(fqn_set))  # type: ignore
-        if fqn.name in self.context.scratch[BASE_MODEL_CONTEXT_KEY]:
+        if self.context.scratch[CONTEXT_KEY].get(fqn.name, False):
             self.inside_base_model = True
 
     def leave_ClassDef(self, original_node: cst.ClassDef, updated_node: cst.ClassDef) -> cst.ClassDef:
@@ -94,7 +92,6 @@ if __name__ == "__main__":
     from tempfile import TemporaryDirectory
 
     from libcst.metadata import FullRepoManager
-    from rich.pretty import pprint
 
     with TemporaryDirectory(dir=os.getcwd()) as tmpdir:
         package_dir = f"{tmpdir}/package"
@@ -123,11 +120,8 @@ if __name__ == "__main__":
         wrapper = mrg.get_metadata_wrapper_for_path(module)
         context = CodemodContext(wrapper=wrapper)
 
-        command = ClassDefVisitor(context=context)
-        mod = wrapper.visit(command)
-
-        find_base_model(scratch=context.scratch)
-        pprint(context.scratch)
+        # classes = run_mypy_visitor(context=context)
+        # mod = wrapper.visit(command)
 
         command = AddDefaultNoneCommand(context=context)  # type: ignore[assignment]
         mod = wrapper.visit(command)
