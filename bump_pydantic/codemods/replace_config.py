@@ -117,9 +117,14 @@ class ReplaceConfigCodemod(VisitorBasedCodemodCommand):
         super().__init__(context)
 
         self.inside_config_class = False
+        self.is_base_settings = False
         self.invalid_config_class = False
         self.inherited_config_class = False
         self.config_args: List[cst.Arg] = []
+
+    @m.visit(m.ClassDef(bases=[m.ZeroOrMore(), m.Arg(value=m.Name("BaseSettings")), m.ZeroOrMore()]))
+    def visit_settings_with_config(self, node: cst.ClassDef) -> None:
+        self.is_base_settings = True
 
     @m.visit(m.ClassDef(name=m.Name(value="Config")))
     def visit_config_class(self, node: cst.ClassDef) -> None:
@@ -203,7 +208,11 @@ class ReplaceConfigCodemod(VisitorBasedCodemodCommand):
         if self.invalid_config_class:
             self.invalid_config_class = False
             return updated_node
-        AddImportsVisitor.add_needed_import(context=self.context, module="pydantic", obj="ConfigDict")
+        if self.is_base_settings:
+            needed_import = {"module": "pydantic_settings", "obj": "SettingsConfigDict"}
+        else:
+            needed_import = {"module": "pydantic", "obj": "ConfigDict"}
+        AddImportsVisitor.add_needed_import(context=self.context, **needed_import)  # type: ignore[arg-type]
         block = cst.ensure_type(updated_node.body, cst.IndentedBlock)
         body = [
             cst.SimpleStatementLine(
@@ -211,7 +220,7 @@ class ReplaceConfigCodemod(VisitorBasedCodemodCommand):
                     cst.Assign(
                         targets=[cst.AssignTarget(target=cst.Name("model_config"))],
                         value=cst.Call(
-                            func=cst.Name("ConfigDict"),
+                            func=cst.Name("SettingsConfigDict" if self.is_base_settings else "ConfigDict"),
                             args=self.config_args,
                         ),
                     )
@@ -222,6 +231,7 @@ class ReplaceConfigCodemod(VisitorBasedCodemodCommand):
             else statement
             for statement in block.body
         ]
+        self.is_base_settings = False
         self.config_args = []
         return updated_node.with_changes(body=updated_node.body.with_changes(body=body))
 
@@ -249,7 +259,7 @@ if __name__ == "__main__":
         """
         from pydantic import BaseModel
 
-        class A(BaseModel):
+        class A(BaseSettings):
             a: str
             # My comment
 
