@@ -5,7 +5,7 @@ from argparse import ArgumentParser
 
 from mypy.build import build
 from mypy.main import process_options
-from mypy.nodes import ClassDef
+from mypy.nodes import CallExpr, ClassDef, MemberExpr, NameExpr
 from mypy.traverser import TraverserVisitor
 
 CONTEXT_KEY = "mypy_visitor"
@@ -19,6 +19,21 @@ class MyPyVisitor(TraverserVisitor):
     def visit_class_def(self, o: ClassDef) -> None:
         super().visit_class_def(o)
         self.classes[o.fullname] = o.info.has_base("pydantic.main.BaseModel")
+
+    def visit_call_expr(self, o: CallExpr) -> None:
+        super().visit_call_expr(o)
+        print("I'm here!")
+        print(o.callee)
+
+        if isinstance(o.callee, MemberExpr):
+            print(o.callee.def_var)
+            print(o.callee.node)
+            print(o.callee.kind)
+            print(o.callee.fullname)
+            print("ho")
+            if isinstance(o.callee.expr, NameExpr):
+                print(o.callee.fullname)
+                print(o.callee.expr.name)
 
 
 def run_mypy_visitor(arg_files: list[str]) -> dict[str, bool]:
@@ -38,6 +53,9 @@ def run_mypy_visitor(arg_files: list[str]) -> dict[str, bool]:
 
     for file in files:
         tree = result.graph[file.module].tree
+        from rich.pretty import pprint
+
+        pprint(tree.defs)
         if tree:
             tree.accept(visitor=visitor)
             classes.update(visitor.classes)
