@@ -5,7 +5,7 @@ import libcst.matchers as m
 from libcst.codemod import CodemodContext, VisitorBasedCodemodCommand
 from libcst.metadata import FullyQualifiedNameProvider, QualifiedName
 
-from bump_pydantic.codemods.mypy_visitor import CONTEXT_KEY
+from bump_pydantic.codemods.mypy_visitor import BASE_MODEL_CONTEXT_KEY
 
 
 class AddDefaultNoneCommand(VisitorBasedCodemodCommand):
@@ -49,7 +49,13 @@ class AddDefaultNoneCommand(VisitorBasedCodemodCommand):
             return None
 
         fqn: QualifiedName = next(iter(fqn_set))  # type: ignore
-        if self.context.scratch[CONTEXT_KEY].get(fqn.name, False):
+        from rich.pretty import pprint
+
+        if self.context.scratch[BASE_MODEL_CONTEXT_KEY].get(fqn.name, False):
+            if "add_none" in fqn.name:
+                print(fqn.name)
+                pprint(self.context.scratch[BASE_MODEL_CONTEXT_KEY])
+                print()
             self.inside_base_model = True
 
     def leave_ClassDef(self, original_node: cst.ClassDef, updated_node: cst.ClassDef) -> cst.ClassDef:

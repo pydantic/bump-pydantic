@@ -18,7 +18,7 @@ from typing_extensions import ParamSpec
 
 from bump_pydantic import __version__
 from bump_pydantic.codemods import Rule, gather_codemods
-from bump_pydantic.codemods.mypy_visitor import CONTEXT_KEY, run_mypy_visitor
+from bump_pydantic.codemods.mypy_visitor import run_mypy_visitor
 
 app = Typer(
     help="Convert Pydantic from V1 to V2 ♻️",
@@ -66,8 +66,7 @@ def main(
     metadata_manager.resolve_cache()
 
     logger.info("Running mypy to get type information. This may take a while...")
-    classes = run_mypy_visitor(files)
-    scratch: dict[str, Any] = {CONTEXT_KEY: classes}
+    scratch = run_mypy_visitor(files)
     logger.info("Finished mypy.")
 
     start_time = time.time()

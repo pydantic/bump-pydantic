@@ -3,25 +3,29 @@ from ..file import File
 
 cases = [
     Case(
-        id="Replace Fields",
+        id="Replace GenericModel",
         input=File(
-            "field.py",
+            "noop.py",
             content=[
-                "from pydantic import BaseModel, Field",
+                "from typing import Generic, TypeVar",
+                "",
+                "T = TypeVar('T')",
                 "",
                 "",
-                "class A(BaseModel):",
-                "    a: List[int] = Field(..., min_items=1, max_items=10)",
+                "class Potato(Generic[T]):",
+                "    pass",
             ],
         ),
         expected=File(
-            "field.py",
+            "noop.py",
             content=[
-                "from pydantic import BaseModel, Field",
+                "from typing import Generic, TypeVar",
+                "",
+                "T = TypeVar('T')",
                 "",
                 "",
-                "class A(BaseModel):",
-                "    a: List[int] = Field(..., min_length=1, max_length=10)",
+                "class Potato(Generic[T]):",
+                "    pass",
             ],
         ),
     ),
