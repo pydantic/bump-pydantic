@@ -16,7 +16,9 @@ def find_issue(current: Folder, expected: Folder) -> str:
         if current_file != expected_file:
             if current_file.name != expected_file.name:
                 return f"Files have different names: {current_file.name} != {expected_file.name}"
-            if isinstance(current_file, Folder) or isinstance(expected_file, Folder):
+            if isinstance(current_file, Folder) and isinstance(expected_file, Folder):
+                return find_issue(current_file, expected_file)
+            elif isinstance(current_file, Folder) or isinstance(expected_file, Folder):
                 return f"One of the files is a folder: {current_file.name} != {expected_file.name}"
             return "\n".join(
                 difflib.unified_diff(
@@ -29,6 +31,7 @@ def find_issue(current: Folder, expected: Folder) -> str:
     return "Unknown"
 
 
+# @pytest.mark.parametrize("before,expected", zip([before, expected]))
 def test_command_line(tmp_path: Path) -> None:
     runner = CliRunner()
 
@@ -36,7 +39,6 @@ def test_command_line(tmp_path: Path) -> None:
         before.create_structure(root=Path(td))
 
         result = runner.invoke(app, [before.name])
-        print(result.output)
         assert result.exit_code == 0, result.output
         # assert result.output.endswith("Refactored 4 files.\n")
 
