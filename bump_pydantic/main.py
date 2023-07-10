@@ -66,7 +66,7 @@ def main(
     metadata_manager.resolve_cache()
 
     logger.info("Running mypy to get type information. This may take a while...")
-    classes = run_mypy_visitor([str(package)])
+    classes = run_mypy_visitor(files)
     scratch: dict[str, Any] = {CONTEXT_KEY: classes}
     logger.info("Finished mypy.")
 
