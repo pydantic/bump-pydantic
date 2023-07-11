@@ -22,7 +22,7 @@ class Folder:
             if isinstance(file, Folder):
                 file.create_structure(path)
             else:
-                (path / file.name).write_text(file.content)
+                (path / file.name).write_text(file.content, encoding="utf-8")
 
     @classmethod
     def from_structure(cls, root: Path) -> Folder:
@@ -33,7 +33,7 @@ class Folder:
             if path.is_dir():
                 files.append(cls.from_structure(path))
             else:
-                files.append(File(path.name, path.read_text().splitlines()))
+                files.append(File(path.name, path.read_text(encoding="utf-8").splitlines()))
 
         return Folder(name, *files)
 

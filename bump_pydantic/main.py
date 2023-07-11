@@ -29,7 +29,6 @@ app = Typer(
 P = ParamSpec("P")
 T = TypeVar("T")
 
-
 logging.basicConfig(level="INFO", format="%(message)s", datefmt="[%X]", handlers=[RichHandler()])
 logger = logging.getLogger("bump_pydantic")
 
@@ -45,6 +44,7 @@ def main(
     package: Path = Argument(..., exists=True, dir_okay=True, allow_dash=False),
     disable: List[Rule] = Option(default=[], help="Disable a rule."),
     log_file: Path = Option("log.txt", help="Log errors to this file."),
+    encoding: str = Option(default="utf-8", help="Set encoding of your files"),
     version: bool = Option(
         None,
         "--version",
@@ -75,7 +75,7 @@ def main(
     codemods = gather_codemods(disabled=disable)
 
     log_fp = log_file.open("a+")
-    partial_run_codemods = functools.partial(run_codemods, codemods, metadata_manager, scratch, package)
+    partial_run_codemods = functools.partial(run_codemods, codemods, metadata_manager, scratch, package, encoding)
     with Progress(*Progress.get_default_columns(), transient=True) as progress:
         task = progress.add_task(description="Executing codemods...", total=len(files))
         count_errors = 0
@@ -103,6 +103,7 @@ def run_codemods(
     scratch: Dict[str, Any],
     package: Path,
     filename: str,
+    encoding: str,
 ) -> Union[str, None]:
     try:
         module_and_package = calculate_module_and_package(str(package), filename)
@@ -115,10 +116,11 @@ def run_codemods(
         context.scratch.update(scratch)
 
         file_path = Path(filename)
-        with file_path.open("r+") as fp:
-            code = fp.read()
+        with file_path.open("rb+") as fp:
+            raw_file = fp.read()
             fp.seek(0)
-
+            code = raw_file.decode(encoding, "strict")
+            del raw_file
             input_tree = cst.parse_module(code)
 
             for codemod in codemods:
@@ -128,7 +130,7 @@ def run_codemods(
 
             output_code = input_tree.code
             if code != output_code:
-                fp.write(output_code)
+                fp.write(output_code.encode(encoding, "strict"))
                 fp.truncate()
         return None
     except Exception:
