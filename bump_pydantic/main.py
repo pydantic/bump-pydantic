@@ -115,7 +115,7 @@ def run_codemods(
         context.scratch.update(scratch)
 
         file_path = Path(filename)
-        with file_path.open("r+") as fp:
+        with file_path.open("r+", encoding="utf-8") as fp:
             code = fp.read()
             fp.seek(0)
 
