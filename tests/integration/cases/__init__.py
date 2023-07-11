@@ -9,6 +9,7 @@ from .folder_inside_folder import cases as folder_inside_folder_cases
 from .is_base_model import cases as is_base_model_cases
 from .replace_validator import cases as replace_validator_cases
 from .root_model import cases as root_model_cases
+from .unicode import cases as unicode_cases
 
 cases = [
     Case(
@@ -24,6 +25,7 @@ cases = [
     *root_model_cases,
     *generic_model_cases,
     *folder_inside_folder_cases,
+    *unicode_cases,
 ]
 before = Folder("project", *[case.input for case in cases])
 expected = Folder("project", *[case.expected for case in cases])
