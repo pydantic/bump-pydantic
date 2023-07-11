@@ -2,7 +2,6 @@
 
 [![PyPI - Version](https://img.shields.io/pypi/v/bump-pydantic.svg)](https://pypi.org/project/bump-pydantic)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/bump-pydantic.svg)](https://pypi.org/project/bump-pydantic)
-[![PyPI - License](https://img.shields.io/pypi/l/bump-pydantic.svg)](https://pypi.org/project/bump-pydantic)
 
 
 Bump Pydantic is a tool to help you migrate your code from Pydantic V1 to V2.
@@ -27,7 +26,6 @@ Bump Pydantic is a tool to help you migrate your code from Pydantic V1 to V2.
     - [BP005: Replace `GenericModel` by `BaseModel`](#bp005-replace-genericmodel-by-basemodel)
     - [BP006: Replace `__root__` by `RootModel`](#bp006-replace-__root__-by-rootmodel)
     - [BP007: Replace decorators](#bp007-replace-decorators)
-    <!-- - [BP008: Replace `pydantic.parse_obj_as` by `pydantic.TypeAdapter`](#bp008-replace-pydanticparse_obj_as-by-pydantictypeadapter) -->
   - [License](#license)
 
 ---
