@@ -1,7 +1,6 @@
-from ..case import Case
-from ..file import File
-
-config_to_model_before = """\
+["config_to_model_toml.py"]
+name = "Replace Config class to model"
+source = """
 from pydantic import BaseModel
 
 
@@ -19,9 +18,8 @@ class BaseConfig:
 class B(BaseModel):
     class Config(BaseConfig):
         ...
-""".splitlines()
-
-config_to_model_after = """\
+"""
+expected = """
 from pydantic import ConfigDict, BaseModel
 
 
@@ -39,9 +37,13 @@ class B(BaseModel):
     # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
     class Config(BaseConfig):
         ...
-""".splitlines()
+"""
 
-config_dict_and_settings_before = """\
+# ======
+
+["config_dict_and_settings_toml.py"]
+name = "Replace Config class on BaseSettings"
+source = """
 from pydantic import BaseModel, BaseSettings
 
 
@@ -55,9 +57,8 @@ class Settings(BaseSettings):
 class A(BaseModel):
     class Config:
         orm_mode = True
-""".splitlines()
-
-config_dict_and_settings_after = """\
+"""
+expected = """
 from pydantic import ConfigDict, BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -69,17 +70,4 @@ class Settings(BaseSettings):
 
 class A(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-""".splitlines()
-
-cases = [
-    Case(
-        name="Replace Config class to model",
-        source=File("config_to_model.py", content=config_to_model_before),
-        expected=File("config_to_model.py", content=config_to_model_after),
-    ),
-    Case(
-        name="Replace Config class on BaseSettings",
-        source=File("config_dict_and_settings.py", content=config_dict_and_settings_before),
-        expected=File("config_dict_and_settings.py", content=config_dict_and_settings_after),
-    ),
-]
+"""
