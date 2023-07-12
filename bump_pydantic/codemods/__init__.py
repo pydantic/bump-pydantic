@@ -5,6 +5,7 @@ from libcst.codemod import ContextAwareTransformer
 from libcst.codemod.visitors import AddImportsVisitor, RemoveImportsVisitor
 
 from bump_pydantic.codemods.add_default_none import AddDefaultNoneCommand
+from bump_pydantic.codemods.con_func import ConFuncCallCommand
 from bump_pydantic.codemods.field import FieldCodemod
 from bump_pydantic.codemods.replace_config import ReplaceConfigCodemod
 from bump_pydantic.codemods.replace_generic_model import ReplaceGenericModelCommand
@@ -28,6 +29,8 @@ class Rule(str, Enum):
     """Replace `BaseModel.__root__ = T` with `RootModel[T]`."""
     BP007 = "BP007"
     """Replace `@validator` with `@field_validator`."""
+    BP008 = "BP008"
+    """Replace `constr(<args>)` with `Annotated[str, StringConstraints(<args>)`."""
 
 
 def gather_codemods(disabled: List[Rule]) -> List[Type[ContextAwareTransformer]]:
@@ -53,6 +56,9 @@ def gather_codemods(disabled: List[Rule]) -> List[Type[ContextAwareTransformer]]
 
     if Rule.BP007 not in disabled:
         codemods.append(ValidatorCodemod)
+
+    if Rule.BP008 not in disabled:
+        codemods.append(ConFuncCallCommand)
 
     # Those codemods need to be the last ones.
     codemods.extend([RemoveImportsVisitor, AddImportsVisitor])
