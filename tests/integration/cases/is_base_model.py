@@ -3,8 +3,8 @@ from ..file import File
 
 cases = [
     Case(
-        id="Make sure is BaseModel",
-        input=File(
+        name="Make sure is BaseModel",
+        source=File(
             "a.py",
             content=[
                 "from pydantic import BaseModel",
@@ -34,8 +34,8 @@ cases = [
         ),
     ),
     Case(
-        id="Make sure is BaseModel",
-        input=File(
+        name="Make sure is BaseModel",
+        source=File(
             "b.py",
             content=[
                 "from pydantic import BaseModel",
@@ -69,8 +69,8 @@ cases = [
         ),
     ),
     Case(
-        id="Make sure is BaseModel",
-        input=File(
+        name="Make sure is BaseModel",
+        source=File(
             "c.py",
             content=[
                 "from pydantic import BaseModel",
@@ -94,8 +94,8 @@ cases = [
         ),
     ),
     Case(
-        id="Make sure is BaseModel",
-        input=File(
+        name="Make sure is BaseModel",
+        source=File(
             "d.py",
             content=[
                 "from pydantic import BaseModel",

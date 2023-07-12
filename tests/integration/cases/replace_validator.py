@@ -3,8 +3,8 @@ from ..file import File
 
 cases = [
     Case(
-        id="Replace validator",
-        input=File(
+        name="Replace validator",
+        source=File(
             "replace_validator.py",
             content=[
                 "from pydantic import BaseModel, validator, root_validator",
@@ -46,8 +46,8 @@ cases = [
         ),
     ),
     Case(
-        id="Replace validator with pre=True",
-        input=File(
+        name="Replace validator with pre=True",
+        source=File(
             "const_to_literal.py",
             content=[
                 "from enum import Enum",

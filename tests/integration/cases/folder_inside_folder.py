@@ -4,8 +4,8 @@ from ..folder import Folder
 
 cases = [
     Case(
-        id="Add Folder",
-        input=Folder(
+        name="Add Folder",
+        source=Folder(
             "folder",
             File("__init__.py", content=[]),
             File(

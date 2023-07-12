@@ -3,8 +3,8 @@ from ..file import File
 
 cases = [
     Case(
-        id="BaseSettings import",
-        input=File(
+        name="BaseSettings import",
+        source=File(
             "settings.py",
             content=[
                 "from pydantic import BaseSettings",

@@ -8,6 +8,6 @@ from .folder import Folder
 
 @dataclass
 class Case:
-    input: Folder | File
+    source: Folder | File
     expected: Folder | File
-    id: str
+    name: str
