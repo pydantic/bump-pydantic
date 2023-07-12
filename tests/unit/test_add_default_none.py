@@ -38,7 +38,7 @@ class TestClassDefVisitor(UnitTest):
         """
         )
         module = self.add_default_none("some/test/module.py", source)
-        self.assertEqual(module.code, source)
+        assert module.code == source
 
     def test_with_optional(self) -> None:
         module = self.add_default_none(
@@ -57,7 +57,7 @@ class Potato(BaseModel):
     a: Optional[str] = None
 """
         )
-        self.assertEqual(module.code, expected)
+        assert module.code == expected
 
     def test_with_union_none(self) -> None:
         module = self.add_default_none(
@@ -78,7 +78,7 @@ class Potato(BaseModel):
     a: Union[str, None] = None
 """
         )
-        self.assertEqual(module.code, expected)
+        assert module.code == expected
 
     def test_with_multiple_classes(self) -> None:
         module = self.add_default_none(
@@ -105,7 +105,7 @@ class Carrot(Potato):
     b: Optional[str] = None
             """
         )
-        self.assertEqual(module.code, expected)
+        assert module.code == expected
 
     def test_any(self) -> None:
         module = self.add_default_none(
@@ -126,7 +126,7 @@ class Potato(BaseModel):
     a: Any = None
 """
         )
-        self.assertEqual(module.code, expected)
+        assert module.code == expected
 
     @pytest.mark.xfail(reason="Recursive Union is not supported")
     def test_union_of_union(self) -> None:
@@ -148,4 +148,4 @@ class Potato(BaseModel):
     a: Union[Union[str, None], int] = None
 """
         )
-        self.assertEqual(module.code, expected)
+        assert module.code == expected

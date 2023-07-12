@@ -73,13 +73,13 @@ class A(BaseModel):
 
 cases = [
     Case(
-        id="Replace Config class to model",
-        input=File("config_to_model.py", content=config_to_model_before),
+        name="Replace Config class to model",
+        source=File("config_to_model.py", content=config_to_model_before),
         expected=File("config_to_model.py", content=config_to_model_after),
     ),
     Case(
-        id="Replace Config class on BaseSettings",
-        input=File("config_dict_and_settings.py", content=config_dict_and_settings_before),
+        name="Replace Config class on BaseSettings",
+        source=File("config_dict_and_settings.py", content=config_dict_and_settings_before),
         expected=File("config_dict_and_settings.py", content=config_dict_and_settings_after),
     ),
 ]

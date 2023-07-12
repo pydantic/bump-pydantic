@@ -37,57 +37,58 @@ path = "bump_pydantic/__init__.py"
 
 [tool.hatch.envs.default]
 dependencies = [
+  "black>=23.1.0",
   "coverage[toml]>=6.5",
-  "pytest",
-  "rich",
+  "mypy>=1.0.0",
   "pydantic",
   "pytest-xdist",
+  "pytest",
+  "rich",
   "rtoml",
-  "black>=23.1.0",
-  "mypy>=1.0.0",
   "ruff>=0.0.243",
 ]
 
 [tool.hatch.envs.default.scripts]
-test = "pytest {args:tests}"
-test-cov = "coverage run -m pytest {args:tests}"
-cov-report = ["- coverage combine", "coverage report"]
 cov = ["test-cov", "cov-report"]
+cov-report = ["- coverage combine", "coverage report"]
+format = ["black {args:.}", "ruff --fix {args:.}"]
 lint = [
   "ruff {args:.}",
   "black --check --diff {args:.}",
   "mypy {args:bump_pydantic tests}",
 ]
-format = ["black {args:.}", "ruff --fix {args:.}"]
+test = "pytest {args:tests}"
+test-cov = "coverage run -m pytest {args:tests}"
 
 [[tool.hatch.envs.all.matrix]]
 python = ["3.8", "3.9", "3.10", "3.11"]
 
 [tool.black]
-target-version = ["py38"]
-skip-string-normalization = true
 line-length = 120
+skip-string-normalization = true
+target-version = ["py38"]
 
 [tool.ruff]
-line-length = 120
-extend-select = ['Q', 'RUF100', 'C90', 'UP', 'I']
-mccabe = { max-complexity = 14 }
+extend-select = ['A', 'B', 'C4', 'C90', 'I', 'Q', 'PERF', 'PT', 'RUF100', 'UP', 'W']
+ignore = ['B008']  # That's how Typer works.
 isort = { known-first-party = ['bump_pydantic', 'tests'] }
+line-length = 120
+mccabe = { max-complexity = 14 }
 target-version = 'py38'
 
 [tool.pytest.ini_options]
 xfail_strict = true
 
 [tool.coverage.run]
-source_pkgs = ["bump_pydantic"]
 branch = true
+source_pkgs = ["bump_pydantic"]
 
 [tool.coverage.report]
-show_missing = true
-skip_covered = true
 exclude_lines = [
-  "pragma: nocover",
-  "pragma: no cover",
   "if __name__ == .__main__.:",
   "if TYPE_CHECKING:",
+  "pragma: no cover",
+  "pragma: nocover",
 ]
+show_missing = true
+skip_covered = true

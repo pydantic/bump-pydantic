@@ -3,8 +3,8 @@ from ..file import File
 
 cases = [
     Case(
-        id="Replace Fields",
-        input=File(
+        name="Replace Fields",
+        source=File(
             "field.py",
             content=[
                 "from pydantic import BaseModel, Field",

@@ -3,8 +3,8 @@ from ..file import File
 
 cases = [
     Case(
-        id="Replace __root__ by RootModel",
-        input=File(
+        name="Replace __root__ by RootModel",
+        source=File(
             "root_model.py",
             content=[
                 "from pydantic import BaseModel",

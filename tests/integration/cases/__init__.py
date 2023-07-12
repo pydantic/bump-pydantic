@@ -12,8 +12,8 @@ from .root_model import cases as root_model_cases
 
 cases = [
     Case(
-        id="empty",
-        input=File("__init__.py", content=[]),
+        name="empty",
+        source=File("__init__.py", content=[]),
         expected=File("__init__.py", content=[]),
     ),
     *base_settings_cases,
@@ -25,5 +25,5 @@ cases = [
     *generic_model_cases,
     *folder_inside_folder_cases,
 ]
-before = Folder("project", *[case.input for case in cases])
+before = Folder("project", *[case.source for case in cases])
 expected = Folder("project", *[case.expected for case in cases])

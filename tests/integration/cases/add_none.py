@@ -3,8 +3,8 @@ from ..file import File
 
 cases = [
     Case(
-        id="Add None",
-        input=File(
+        name="Add None",
+        source=File(
             "add_none.py",
             content=[
                 "from typing import Any, Dict, Optional, Union",
