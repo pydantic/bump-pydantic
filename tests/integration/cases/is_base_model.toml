@@ -1,0 +1,89 @@
+["a.py"]
+name = "Make sure is BaseModel"
+source = """
+from pydantic import BaseModel
+
+
+class A(BaseModel):
+    a: int
+
+
+class D:
+    d: int
+"""
+expected = """
+from pydantic import BaseModel
+
+
+class A(BaseModel):
+    a: int
+
+
+class D:
+    d: int
+"""
+
+["b.py"]
+name = "Make sure is BaseModel"
+source = """
+from pydantic import BaseModel
+from .a import A, D
+from typing import Optional
+
+
+class B(A):
+    b: Optional[int]
+
+
+class C(D):
+    c: Optional[int]
+"""
+expected = """
+from pydantic import BaseModel
+from .a import A, D
+from typing import Optional
+
+
+class B(A):
+    b: Optional[int] = None
+
+
+class C(D):
+    c: Optional[int]
+"""
+
+["c.py"]
+name = "Make sure is BaseModel"
+source = """
+from pydantic import BaseModel
+from .d import D
+
+
+class C(D):
+    c: Optional[int]
+"""
+expected = """
+from pydantic import BaseModel
+from .d import D
+
+
+class C(D):
+    c: Optional[int] = None
+"""
+
+["d.py"]
+name = "Make sure is BaseModel"
+source = """
+from pydantic import BaseModel
+
+
+class D(BaseModel):
+    d: int
+"""
+expected = """
+from pydantic import BaseModel
+
+
+class D(BaseModel):
+    d: int
+"""

@@ -1,0 +1,16 @@
+["settings.py"]
+name="BaseSettings import"
+source = """
+from pydantic import BaseSettings
+
+
+class Settings(BaseSettings):
+    a: int
+"""
+expected = """
+from pydantic_settings import BaseSettings
+
+
+class Settings(BaseSettings):
+    a: int
+"""

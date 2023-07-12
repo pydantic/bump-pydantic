@@ -1,0 +1,16 @@
+["root_model.py"]
+name = "Replace __root__ by RootModel"
+source = """
+from pydantic import BaseModel
+
+
+class A(BaseModel):
+    __root__ = int
+"""
+expected = """
+from pydantic import RootModel
+
+
+class A(RootModel[int]):
+    pass
+"""
