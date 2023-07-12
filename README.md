@@ -26,6 +26,7 @@ Bump Pydantic is a tool to help you migrate your code from Pydantic V1 to V2.
     - [BP005: Replace `GenericModel` by `BaseModel`](#bp005-replace-genericmodel-by-basemodel)
     - [BP006: Replace `__root__` by `RootModel`](#bp006-replace-__root__-by-rootmodel)
     - [BP007: Replace decorators](#bp007-replace-decorators)
+    - [BP008: Replace `constr(*args)` by `Annotated[str, StringConstraints(*args)]`](#bp008-replace-constrargs-by-annotatedstr-stringconstraintsargs)
   - [License](#license)
 
 ---
@@ -258,8 +259,33 @@ class User(BaseModel):
         return values
 ```
 
+### BP008: Replace `constr(*args)` by `Annotated[str, StringConstraints(*args)]`
+
+- ✅ Replace `constr(*args)` by `Annotated[str, StringConstraints(*args)]`.
+
+The following code will be transformed:
+
+```py
+from pydantic import BaseModel, constr
+
+
+class User(BaseModel):
+    name: constr(min_length=1)
+```
+
+Into:
+
+```py
+from pydantic import BaseModel, StringConstraints
+from typing_extensions import Annotated
+
+
+class User(BaseModel):
+    name: Annotated[str, StringConstraints(min_length=1)]
+```
+
 <!--
-### BP008: Replace `pydantic.parse_obj_as` by `pydantic.TypeAdapter`
+### BP009: Replace `pydantic.parse_obj_as` by `pydantic.TypeAdapter`
 
 - ✅ Replace `pydantic.parse_obj_as(T, obj)` to `pydantic.TypeAdapter(T).validate_python(obj)`.
 
