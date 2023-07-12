@@ -42,7 +42,7 @@ def version_callback(value: bool):
 
 @app.callback()
 def main(
-    package: Path = Argument(..., exists=True, dir_okay=True, allow_dash=False),
+    path: Path = Argument(..., exists=True, dir_okay=True, allow_dash=False),
     disable: List[Rule] = Option(default=[], help="Disable a rule."),
     log_file: Path = Option("log.txt", help="Log errors to this file."),
     version: bool = Option(
@@ -57,8 +57,14 @@ def main(
     # NOTE: LIBCST_PARSER_TYPE=native is required according to https://github.com/Instagram/LibCST/issues/487.
     os.environ["LIBCST_PARSER_TYPE"] = "native"
 
-    files_str = list(package.glob("**/*.py"))
-    files = [str(file.relative_to(".")) for file in files_str]
+    if os.path.isfile(path):
+        package = path.parent
+        files = [str(path.relative_to("."))]
+    else:
+        package = path
+        files_str = list(package.glob("**/*.py"))
+        files = [str(file.relative_to(".")) for file in files_str]
+
     logger.info(f"Found {len(files)} files to process.")
 
     providers = {FullyQualifiedNameProvider, ScopeProvider}
