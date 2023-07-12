@@ -55,7 +55,7 @@ bump-pydantic --help
 To check the diff before applying the changes, you can run:
 
 ```bash
-bump-pydantic --diff <package>
+bump-pydantic --diff <path>
 ```
 
 ### Apply changes
@@ -63,7 +63,7 @@ bump-pydantic --diff <package>
 To apply the changes, you can run:
 
 ```bash
-bump-pydantic <package>
+bump-pydantic <path>
 ```
 
 ## Rules
