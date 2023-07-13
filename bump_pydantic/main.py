@@ -1,7 +1,9 @@
+import fnmatch
 import functools
 import logging
 import multiprocessing
 import os
+import re
 import time
 import traceback
 from pathlib import Path
@@ -26,8 +28,14 @@ app = Typer(
     add_completion=False,
 )
 
+entrypoint = functools.partial(app, windows_expand_args=False)
+
 P = ParamSpec("P")
 T = TypeVar("T")
+
+DEFAULT_IGNORES = [
+    ".venv/**",
+]
 
 
 logging.basicConfig(level="INFO", format="%(message)s", datefmt="[%X]", handlers=[RichHandler()])
@@ -40,10 +48,31 @@ def version_callback(value: bool):
         raise Exit()
 
 
+def glob_to_re(pattern: str) -> str:
+    """Translate a glob pattern to a regular expression for matching."""
+    fragments = []
+    for part in re.split(r"/|\\", pattern):
+        if part == "**":
+            fragment = r".*(?:/|\\|\Z)"
+        else:
+            fragment = fnmatch.translate(part)
+            fragment = fragment.replace(r"(?s:", r"(?:")
+            fragment = fragment.replace(r".*", r"[^/\\]*")
+            fragment = fragment.replace(r"\Z", r"(?:/|\\|\Z)")
+        fragments.append(fragment)
+    return rf"(?s:{''.join(fragments)})\Z"
+
+
+def match_glob(path: Path, pattern: str) -> bool:
+    """Check if a path matches a glob pattern."""
+    return bool(re.fullmatch(glob_to_re(pattern), str(path)))
+
+
 @app.callback()
 def main(
     path: Path = Argument(..., exists=True, dir_okay=True, allow_dash=False),
     disable: List[Rule] = Option(default=[], help="Disable a rule."),
+    ignore: List[str] = Option(default=DEFAULT_IGNORES, help="Ignore a path glob pattern."),
     log_file: Path = Option("log.txt", help="Log errors to this file."),
     version: bool = Option(
         None,
@@ -59,13 +88,18 @@ def main(
 
     if os.path.isfile(path):
         package = path.parent
-        files = [str(path.relative_to("."))]
+        all_files = [path]
     else:
         package = path
-        files_str = list(package.glob("**/*.py"))
-        files = [str(file.relative_to(".")) for file in files_str]
+        all_files = list(package.glob("**/*.py"))
+
+    filtered_files = [file for file in all_files if not any(match_glob(file, pattern) for pattern in ignore)]
+    files = [str(file.relative_to(".")) for file in filtered_files]
 
     logger.info(f"Found {len(files)} files to process.")
+
+    if not files:
+        raise Exit()
 
     providers = {FullyQualifiedNameProvider, ScopeProvider}
     metadata_manager = FullRepoManager(".", files, providers=providers)  # type: ignore[arg-type]
