@@ -24,6 +24,8 @@ from bump_pydantic.codemods.class_def_visitor import ClassDefVisitor
 
 app = Typer(invoke_without_command=True, add_completion=False)
 
+entrypoint = functools.partial(app, windows_expand_args=False)
+
 P = ParamSpec("P")
 T = TypeVar("T")
 
