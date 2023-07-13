@@ -233,3 +233,6 @@ def color_diff(console: Console, lines: Iterable[str]) -> None:
             console.print(line, style="blue")
         else:
             console.print(line, style="white")
+
+
+app = functools.partial(app, windows_expand_args=False)
