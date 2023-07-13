@@ -86,12 +86,13 @@ def main(
 
     if os.path.isfile(path):
         package = path.parent
-        files = [path]
+        all_files = [path]
     else:
         package = path
-        files = list(package.glob("**/*.py"))
+        all_files = list(package.glob("**/*.py"))
 
-    files = [str(file.relative_to(".")) for file in files if not any(match_glob(file, pattern) for pattern in ignore)]
+    filtered_files = [file for file in all_files if not any(match_glob(file, pattern) for pattern in ignore)]
+    files = [str(file.relative_to(".")) for file in filtered_files]
 
     console.log(f"Found {len(files)} files to process")
 
