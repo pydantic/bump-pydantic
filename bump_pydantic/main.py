@@ -27,6 +27,10 @@ app = Typer(invoke_without_command=True, add_completion=False)
 P = ParamSpec("P")
 T = TypeVar("T")
 
+DEFAULT_IGNORES = [
+    ".venv/**",
+]
+
 
 def version_callback(value: bool):
     if value:
@@ -49,11 +53,17 @@ def glob_to_re(pattern: str) -> str:
     return rf"(?s:{''.join(fragments)})\Z"
 
 
+def match_glob(path: Path, pattern: str) -> bool:
+    """Check if a path matches a glob pattern."""
+    return bool(re.fullmatch(glob_to_re(pattern), str(path)))
+
+
 @app.callback()
 def main(
     path: Path = Argument(..., exists=True, dir_okay=True, allow_dash=False),
     disable: List[Rule] = Option(default=[], help="Disable a rule."),
     diff: bool = Option(False, help="Show diff instead of applying changes."),
+    ignore: List[str] = Option(default=DEFAULT_IGNORES, help="Ignore a path glob pattern."),
     log_file: Path = Option("log.txt", help="Log errors to this file."),
     version: bool = Option(
         None,
@@ -74,11 +84,12 @@ def main(
 
     if os.path.isfile(path):
         package = path.parent
-        files = [str(path.relative_to("."))]
+        files = [path]
     else:
         package = path
-        files_str = list(package.glob("**/*.py"))
-        files = [str(file.relative_to(".")) for file in files_str]
+        files = list(package.glob("**/*.py"))
+
+    files = [str(file.relative_to(".")) for file in files if not any(match_glob(file, pattern) for pattern in ignore)]
 
     console.log(f"Found {len(files)} files to process")
 
