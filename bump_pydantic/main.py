@@ -1,7 +1,9 @@
 import difflib
+import fnmatch
 import functools
 import multiprocessing
 import os
+import re
 import time
 import traceback
 from pathlib import Path
@@ -30,6 +32,21 @@ def version_callback(value: bool):
     if value:
         echo(f"bump-pydantic version: {__version__}")
         raise Exit()
+
+
+def glob_to_re(pattern: str) -> str:
+    """Translate a glob pattern to a regular expression for matching."""
+    fragments = []
+    for part in re.split(r"/|\\", pattern):
+        if part == "**":
+            fragment = r".*(?:/|\\|\Z)"
+        else:
+            fragment = fnmatch.translate(part)
+            fragment = fragment.replace(r"(?s:", r"(?:")
+            fragment = fragment.replace(r".*", r"[^/\\]*")
+            fragment = fragment.replace(r"\Z", r"(?:/|\\|\Z)")
+        fragments.append(fragment)
+    return rf"(?s:{''.join(fragments)})\Z"
 
 
 @app.callback()
