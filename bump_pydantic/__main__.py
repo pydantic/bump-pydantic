@@ -1,4 +1,4 @@
-from bump_pydantic.main import app
+from bump_pydantic.main import entrypoint
 
 if __name__ == "__main__":
-    app()
+    entrypoint()

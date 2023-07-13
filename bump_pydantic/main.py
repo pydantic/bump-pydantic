@@ -28,6 +28,8 @@ app = Typer(
     add_completion=False,
 )
 
+entrypoint = functools.partial(app, windows_expand_args=False)
+
 P = ParamSpec("P")
 T = TypeVar("T")
 
@@ -170,6 +172,3 @@ def run_codemods(
         return None
     except Exception:
         return f"An error happened on {filename}.\n{traceback.format_exc()}"
-
-
-app = functools.partial(app, windows_expand_args=False)
