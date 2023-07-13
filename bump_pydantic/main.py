@@ -93,6 +93,9 @@ def main(
 
     console.log(f"Found {len(files)} files to process")
 
+    if not files:
+        raise Exit()
+
     providers = {FullyQualifiedNameProvider, ScopeProvider}
     metadata_manager = FullRepoManager(".", files, providers=providers)  # type: ignore[arg-type]
     metadata_manager.resolve_cache()
