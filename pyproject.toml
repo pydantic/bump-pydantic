@@ -78,6 +78,10 @@ target-version = 'py38'
 
 [tool.pytest.ini_options]
 xfail_strict = true
+filterwarnings = [
+    # Turn warnings that aren't filtered into exceptions
+    "error",
+]
 
 [tool.coverage.run]
 branch = true
