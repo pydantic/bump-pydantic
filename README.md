@@ -26,7 +26,7 @@ Bump Pydantic is a tool to help you migrate your code from Pydantic V1 to V2.
     - [BP005: Replace `GenericModel` by `BaseModel`](#bp005-replace-genericmodel-by-basemodel)
     - [BP006: Replace `__root__` by `RootModel`](#bp006-replace-__root__-by-rootmodel)
     - [BP007: Replace decorators](#bp007-replace-decorators)
-    - [BP008: Replace `constr(*args)` by `Annotated[str, StringConstraints(*args)]`](#bp008-replace-constrargs-by-annotatedstr-stringconstraintsargs)
+    - [BP008: Replace `con*` functions by `Annotated` versions](#bp008-replace-con-functions-by-annotated-versions)
   - [License](#license)
 
 ---
@@ -259,9 +259,16 @@ class User(BaseModel):
         return values
 ```
 
-### BP008: Replace `constr(*args)` by `Annotated[str, StringConstraints(*args)]`
+### BP008: Replace `con*` functions by `Annotated` versions
 
 - ✅ Replace `constr(*args)` by `Annotated[str, StringConstraints(*args)]`.
+- ✅ Replace `conint(*args)` by `Annotated[int, Field(*args)]`.
+- ✅ Replace `confloat(*args)` by `Annotated[float, Field(*args)]`.
+- ✅ Replace `conbytes(*args)` by `Annotated[bytes, Field(*args)]`.
+- ✅ Replace `condecimal(*args)` by `Annotated[Decimal, Field(*args)]`.
+- ✅ Replace `conset(T, *args)` by `Annotated[Set[T], Field(*args)]`.
+- ✅ Replace `confrozenset(T, *args)` by `Annotated[Set[T], Field(*args)]`.
+- ✅ Replace `conlist(T, *args)` by `Annotated[List[T], Field(*args)]`.
 
 The following code will be transformed:
 
@@ -284,8 +291,7 @@ class User(BaseModel):
     name: Annotated[str, StringConstraints(min_length=1)]
 ```
 
-<!--
-### BP009: Replace `pydantic.parse_obj_as` by `pydantic.TypeAdapter`
+<!-- ### BP009: Replace `pydantic.parse_obj_as` by `pydantic.TypeAdapter`
 
 - ✅ Replace `pydantic.parse_obj_as(T, obj)` to `pydantic.TypeAdapter(T).validate_python(obj)`.
 
@@ -326,8 +332,31 @@ class Users(BaseModel):
 
 
 users = TypeAdapter(Users).validate_python({'users': [{'name': 'John'}]})
+``` -->
+
+<!-- ### BP010: Replace `PyObject` by `ImportString`
+
+- ✅ Replace `PyObject` by `ImportString`.
+
+The following code will be transformed:
+
+```py
+from pydantic import BaseModel, PyObject
+
+
+class User(BaseModel):
+    name: PyObject
 ```
--->
+
+Into:
+
+```py
+from pydantic import BaseModel, ImportString
+
+
+class User(BaseModel):
+    name: ImportString
+``` -->
 
 ---
 

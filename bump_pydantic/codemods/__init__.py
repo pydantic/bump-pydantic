@@ -42,6 +42,10 @@ def gather_codemods(disabled: List[Rule]) -> List[Type[ContextAwareTransformer]]
     if Rule.BP002 not in disabled:
         codemods.append(ReplaceConfigCodemod)
 
+    # The `ConFuncCallCommand` needs to run before the `FieldCodemod`.
+    if Rule.BP008 not in disabled:
+        codemods.append(ConFuncCallCommand)
+
     if Rule.BP003 not in disabled:
         codemods.append(FieldCodemod)
 
@@ -56,9 +60,6 @@ def gather_codemods(disabled: List[Rule]) -> List[Type[ContextAwareTransformer]]
 
     if Rule.BP007 not in disabled:
         codemods.append(ValidatorCodemod)
-
-    if Rule.BP008 not in disabled:
-        codemods.append(ConFuncCallCommand)
 
     # Those codemods need to be the last ones.
     codemods.extend([RemoveImportsVisitor, AddImportsVisitor])
