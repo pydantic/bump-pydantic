@@ -86,7 +86,13 @@ class ConFuncCallCommand(VisitorBasedCodemodCommand):
     def leave_constr_call(self, original_node: cst.Call, updated_node: cst.Call) -> cst.Call:
         self._remove_import(original_node.func)
         AddImportsVisitor.add_needed_import(context=self.context, module="pydantic", obj="StringConstraints")
-        return updated_node.with_changes(func=cst.Name("StringConstraints"))
+        return updated_node.with_changes(
+            func=cst.Name("StringConstraints"),
+            args=[
+                arg if arg.keyword and arg.keyword.value != "regex" else arg.with_changes(keyword=cst.Name("pattern"))
+                for arg in updated_node.args
+            ],
+        )
 
     @m.leave(CON_NUMBER_CALL)
     def leave_con_number_call(self, original_node: cst.Call, updated_node: cst.Call) -> cst.Call:
