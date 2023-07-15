@@ -1,6 +1,7 @@
 import fnmatch
 import re
 from pathlib import Path
+from typing import List
 
 MATCH_SEP = r"(?:/|\\)"
 MATCH_SEP_OR_END = r"(?:/|\\|\Z)"
@@ -10,7 +11,7 @@ MATCH_RECURSIVE = r"(?:.*)"
 
 def glob_to_re(pattern: str) -> str:
     """Translate a glob pattern to a regular expression for matching."""
-    fragments = []
+    fragments: List[str] = []
     for segment in re.split(r"/|\\", pattern):
         if segment == "":
             continue
