@@ -3,7 +3,6 @@ import fnmatch
 import functools
 import multiprocessing
 import os
-import re
 import time
 import traceback
 from pathlib import Path
@@ -21,6 +20,7 @@ from typing_extensions import ParamSpec
 from bump_pydantic import __version__
 from bump_pydantic.codemods import Rule, gather_codemods
 from bump_pydantic.codemods.class_def_visitor import ClassDefVisitor
+from bump_pydantic.helpers import match_glob
 
 app = Typer(invoke_without_command=True, add_completion=False)
 
@@ -36,26 +36,6 @@ def version_callback(value: bool):
     if value:
         echo(f"bump-pydantic version: {__version__}")
         raise Exit()
-
-
-def glob_to_re(pattern: str) -> str:
-    """Translate a glob pattern to a regular expression for matching."""
-    fragments = []
-    for part in re.split(r"/|\\", pattern):
-        if part == "**":
-            fragment = r".*(?:/|\\|\Z)"
-        else:
-            fragment = fnmatch.translate(part)
-            fragment = fragment.replace(r"(?s:", r"(?:")
-            fragment = fragment.replace(r".*", r"[^/\\]*")
-            fragment = fragment.replace(r"\Z", r"(?:/|\\|\Z)")
-        fragments.append(fragment)
-    return rf"(?s:{''.join(fragments)})\Z"
-
-
-def match_glob(path: Path, pattern: str) -> bool:
-    """Check if a path matches a glob pattern."""
-    return bool(re.fullmatch(glob_to_re(pattern), str(path)))
 
 
 @app.callback()
