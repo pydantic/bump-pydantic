@@ -64,7 +64,7 @@ class TestGlob:
         ("foo/**/ba*/*/qux", Path("bar"), False),
     ]
 
-    @pytest.mark.parametrize("pattern,path,expected", match_glob_values)
+    @pytest.mark.parametrize(("pattern", "path", "expected"), match_glob_values)
     def test_match_glob(self, pattern: str, path: Path, expected: bool):
         expr = glob_to_re(pattern)
         assert match_glob(path, pattern) == expected, f"path: {path}, pattern: {pattern}, expr: {expr}"
