@@ -82,7 +82,7 @@ def main(
             progress.advance(task)
 
             # Visitor logic
-            code = Path(filename).read_text()
+            code = Path(filename).read_text(encoding="utf8")
             module = cst.parse_module(code)
             module_and_package = calculate_module_and_package(str(package), filename)
 
