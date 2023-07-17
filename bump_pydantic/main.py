@@ -19,7 +19,7 @@ from typing_extensions import ParamSpec
 from bump_pydantic import __version__
 from bump_pydantic.codemods import Rule, gather_codemods
 from bump_pydantic.codemods.class_def_visitor import ClassDefVisitor
-from bump_pydantic.helpers import match_glob
+from bump_pydantic.glob_helpers import match_glob
 
 app = Typer(invoke_without_command=True, add_completion=False)
 

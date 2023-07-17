@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from bump_pydantic.helpers import glob_to_re, match_glob
+from bump_pydantic.glob_helpers import glob_to_re, match_glob
 
 
 class TestGlob:
