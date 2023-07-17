@@ -191,22 +191,6 @@ def run_codemods(
         return f"An error happened on {filename}.\n{traceback.format_exc()}", None
 
 
-def visit_class_def(metadata_manager: FullRepoManager, package: Path, filename: str) -> Dict[str, Any]:
-    code = Path(filename).read_text()
-    module = cst.parse_module(code)
-    module_and_package = calculate_module_and_package(str(package), filename)
-
-    context = CodemodContext(
-        metadata_manager=metadata_manager,
-        filename=filename,
-        full_module_name=module_and_package.name,
-        full_package_name=module_and_package.package,
-    )
-    visitor = ClassDefVisitor(context=context)
-    visitor.transform_module(module)
-    return context.scratch
-
-
 def color_diff(console: Console, lines: Iterable[str]) -> None:
     for line in lines:
         line = line.rstrip("\n")
