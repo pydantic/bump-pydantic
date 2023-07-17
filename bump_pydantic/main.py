@@ -20,11 +20,7 @@ from bump_pydantic import __version__
 from bump_pydantic.codemods import Rule, gather_codemods
 from bump_pydantic.codemods.class_def_visitor import ClassDefVisitor
 
-app = Typer(
-    help="Convert Pydantic from V1 to V2 ♻️",
-    invoke_without_command=True,
-    add_completion=False,
-)
+app = Typer(invoke_without_command=True, add_completion=False)
 
 P = ParamSpec("P")
 T = TypeVar("T")
@@ -50,6 +46,10 @@ def main(
         help="Show the version and exit.",
     ),
 ):
+    """Convert Pydantic from V1 to V2 ♻️
+
+    Check the README for more information: https://github.com/pydantic/bump-pydantic.
+    """
     console = Console(log_time=True)
     console.log("Start bump-pydantic.")
     # NOTE: LIBCST_PARSER_TYPE=native is required according to https://github.com/Instagram/LibCST/issues/487.

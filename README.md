@@ -45,10 +45,19 @@ pip install bump-pydantic
 
 `bump-pydantic` is a CLI tool, hence you can use it from your terminal.
 
-To see the available options, you can run:
+It's easy to use. If your project structure is:
 
 ```bash
-bump-pydantic --help
+repository/
+└── my_package/
+    └── <python source files>
+```
+
+Then you'll want to do:
+
+```bash
+cd /path/to/repository
+bump-pydantic my_package
 ```
 
 ### Check diff before applying changes
