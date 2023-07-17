@@ -7,7 +7,7 @@ import pytest
 from bump_pydantic.glob_helpers import glob_to_re, match_glob
 
 
-class TestGlob:
+class TestGlobHelpers:
     match_glob_values: list[tuple[str, Path, bool]] = [
         ("foo", Path("foo"), True),
         ("foo", Path("bar"), False),
