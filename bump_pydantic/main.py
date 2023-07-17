@@ -93,7 +93,7 @@ def main(
             progress.advance(task)
 
             # Visitor logic
-            code = Path(filename).read_text()
+            code = Path(filename).read_text(encoding="utf8")
             module = cst.parse_module(code)
             module_and_package = calculate_module_and_package(str(package), filename)
 
@@ -120,7 +120,7 @@ def main(
 
     codemods = gather_codemods(disabled=disable)
 
-    log_fp = log_file.open("a+")
+    log_fp = log_file.open("a+", encoding="utf8")
     partial_run_codemods = functools.partial(run_codemods, codemods, metadata_manager, scratch, package, diff)
     with Progress(*Progress.get_default_columns(), transient=True) as progress:
         task = progress.add_task(description="Executing codemods...", total=len(files))
