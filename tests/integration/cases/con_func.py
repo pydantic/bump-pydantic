@@ -23,14 +23,14 @@ cases = [
         expected=File(
             "con_func.py",
             content=[
-                "from pydantic import Field, StringConstraints, BaseModel",
+                "from pydantic import Field, BaseModel, constr",
                 "from decimal import Decimal",
                 "from typing import List, Set",
                 "from typing_extensions import Annotated",
                 "",
                 "",
                 "class Potato(BaseModel):",
-                "    a: Annotated[str, StringConstraints(pattern='[a-z]+')]",
+                "    a: constr(pattern='[a-z]+')",
                 "    b: Annotated[List[int], Field(min_length=1, max_length=10)]",
                 "    c: Annotated[int, Field(gt=0, lt=10)]",
                 "    d: Annotated[bytes, Field(min_length=1, max_length=10)]",

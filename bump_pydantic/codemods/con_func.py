@@ -57,6 +57,10 @@ class ConFuncCallCommand(VisitorBasedCodemodCommand):
             func_name = cast(str, annotation.func.attr.value)  # type: ignore
         type_name = MAP_FUNC_TO_TYPE[func_name]
 
+        # TODO: When FastAPI supports Pydantic 2.0.4+, remove the conditional below.
+        if func_name == "constr":
+            return updated_node
+
         needed_import = MAP_TYPE_TO_NEEDED_IMPORT.get(type_name)
         if needed_import is not None:
             AddImportsVisitor.add_needed_import(context=self.context, **needed_import)  # type: ignore[arg-type]
@@ -82,12 +86,13 @@ class ConFuncCallCommand(VisitorBasedCodemodCommand):
         annotation = cst.Annotation(annotation=annotated)  # type: ignore[assignment]
         return updated_node.with_changes(annotation=annotation)
 
+    # TODO: When FastAPI supports Pydantic 2.0.4+, remove the comments below.
     @m.leave(CONSTR_CALL)
     def leave_constr_call(self, original_node: cst.Call, updated_node: cst.Call) -> cst.Call:
         self._remove_import(original_node.func)
-        AddImportsVisitor.add_needed_import(context=self.context, module="pydantic", obj="StringConstraints")
+        # AddImportsVisitor.add_needed_import(context=self.context, module="pydantic", obj="StringConstraints")
         return updated_node.with_changes(
-            func=cst.Name("StringConstraints"),
+            # func=cst.Name("StringConstraints"),
             args=[
                 arg if arg.keyword and arg.keyword.value != "regex" else arg.with_changes(keyword=cst.Name("pattern"))
                 for arg in updated_node.args
