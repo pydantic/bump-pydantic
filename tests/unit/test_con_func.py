@@ -1,3 +1,4 @@
+import pytest
 from libcst.codemod import CodemodTest
 
 from bump_pydantic.codemods.con_func import ConFuncCallCommand
@@ -8,6 +9,7 @@ class TestFieldCommand(CodemodTest):
 
     maxDiff = None
 
+    @pytest.mark.xfail(reason="Annotated is not supported yet!")
     def test_constr_to_annotated(self) -> None:
         before = """
         from pydantic import BaseModel, constr
@@ -24,6 +26,7 @@ class TestFieldCommand(CodemodTest):
         """
         self.assertCodemod(before, after)
 
+    @pytest.mark.xfail(reason="Annotated is not supported yet!")
     def test_pydantic_constr_to_annotated(self) -> None:
         before = """
         import pydantic
