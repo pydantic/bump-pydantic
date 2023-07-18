@@ -30,7 +30,7 @@ Issues = "https://github.com/pydantic/bump-pydantic/issues"
 Source = "https://github.com/pydantic/bump-pydantic"
 
 [project.scripts]
-bump-pydantic = "bump_pydantic.main:app"
+bump-pydantic = "bump_pydantic.main:entrypoint"
 
 [tool.hatch.version]
 path = "bump_pydantic/__init__.py"

@@ -19,11 +19,16 @@ from typing_extensions import ParamSpec
 from bump_pydantic import __version__
 from bump_pydantic.codemods import Rule, gather_codemods
 from bump_pydantic.codemods.class_def_visitor import ClassDefVisitor
+from bump_pydantic.glob_helpers import match_glob
 
 app = Typer(invoke_without_command=True, add_completion=False)
 
+entrypoint = functools.partial(app, windows_expand_args=False)
+
 P = ParamSpec("P")
 T = TypeVar("T")
+
+DEFAULT_IGNORES = [".venv/**"]
 
 
 def version_callback(value: bool):
@@ -37,6 +42,7 @@ def main(
     path: Path = Argument(..., exists=True, dir_okay=True, allow_dash=False),
     disable: List[Rule] = Option(default=[], help="Disable a rule."),
     diff: bool = Option(False, help="Show diff instead of applying changes."),
+    ignore: List[str] = Option(default=DEFAULT_IGNORES, help="Ignore a path glob pattern."),
     log_file: Path = Option("log.txt", help="Log errors to this file."),
     version: bool = Option(
         None,
@@ -57,13 +63,19 @@ def main(
 
     if os.path.isfile(path):
         package = path.parent
-        files = [str(path.relative_to("."))]
+        all_files = [path]
     else:
         package = path
-        files_str = list(package.glob("**/*.py"))
-        files = [str(file.relative_to(".")) for file in files_str]
+        all_files = list(package.glob("**/*.py"))
 
-    console.log(f"Found {len(files)} files to process")
+    filtered_files = [file for file in all_files if not any(match_glob(file, pattern) for pattern in ignore)]
+    files = [str(file.relative_to(".")) for file in filtered_files]
+
+    if files:
+        console.log(f"Found {len(files)} files to process")
+    else:
+        console.log("No files to process.")
+        raise Exit()
 
     providers = {FullyQualifiedNameProvider, ScopeProvider}
     metadata_manager = FullRepoManager(".", files, providers=providers)  # type: ignore[arg-type]
