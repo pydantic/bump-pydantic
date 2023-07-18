@@ -71,9 +71,10 @@ def main(
     filtered_files = [file for file in all_files if not any(match_glob(file, pattern) for pattern in ignore)]
     files = [str(file.relative_to(".")) for file in filtered_files]
 
-    console.log(f"Found {len(files)} files to process")
-
-    if not files:
+    if files:
+        console.log(f"Found {len(files)} files to process")
+    else:
+        console.log("No files to process.")
         raise Exit()
 
     providers = {FullyQualifiedNameProvider, ScopeProvider}
