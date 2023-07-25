@@ -7,7 +7,7 @@
 Bump Pydantic is a tool to help you migrate your code from Pydantic V1 to V2.
 
 
-> **Note**
+> [!NOTE]\
 > If you find bugs, please report them on the [issue tracker](https://github.com/pydantic/bump-pydantic/issues/new).
 
 ## Table of contents
