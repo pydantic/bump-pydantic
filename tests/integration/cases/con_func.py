@@ -19,6 +19,7 @@ cases = [
                 "    f: confloat(gt=0, lt=10)",
                 "    g: conset(int, min_items=1, max_items=10)",
                 "    h: Optional[conint(ge=1, le=4294967295)] = None",
+                "    i: dict[str, condecimal(max_digits=10, decimal_places=2)]",
             ],
         ),
         expected=File(
@@ -39,6 +40,7 @@ cases = [
                 "    f: Annotated[float, Field(gt=0, lt=10)]",
                 "    g: Annotated[Set[int], Field(min_length=1, max_length=10)]",
                 "    h: Optional[Annotated[int, Field(ge=1, le=4294967295)]] = None",
+                "    i: dict[str, Annotated[Decimal, Field(max_digits=10, decimal_places=2)]]",
             ],
         ),
     )
