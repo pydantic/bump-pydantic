@@ -1,4 +1,3 @@
-import libcst as cst
 from libcst.codemod import CodemodTest
 
 from bump_pydantic.codemods.con_func import ConFuncCallCommand
@@ -83,19 +82,6 @@ class TestFieldCommand(CodemodTest):
         class Potato(BaseModel):
             potato: Optional[conint(ge=0, le=100)]
         """
-        import textwrap
-
-        from rich.pretty import pprint
-
-        pprint(cst.parse_module(textwrap.dedent(before)))
-        another_before = """
-        from typing import Optional
-        from pydantic import BaseModel, conint
-
-        class Potato(BaseModel):
-            potato: conint(ge=0, le=100)
-        """
-        pprint(cst.parse_module(textwrap.dedent(another_before)))
         after = """
         from typing import Optional
         from pydantic import Field, BaseModel
