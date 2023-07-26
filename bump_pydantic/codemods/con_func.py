@@ -6,24 +6,18 @@ from libcst.codemod import CodemodContext, VisitorBasedCodemodCommand
 from libcst.codemod.visitors import AddImportsVisitor, RemoveImportsVisitor
 
 CONSTR_CALL = m.Call(func=m.Name("constr") | m.Attribute(value=m.Name("pydantic"), attr=m.Name("constr")))
-ANN_ASSIGN_CONSTR_CALL = m.AnnAssign(annotation=m.Annotation(annotation=CONSTR_CALL))
-
-
 CON_NUMBER_CALL = m.OneOf(
     *[
         m.Call(func=m.Name(name) | m.Attribute(value=m.Name("pydantic"), attr=m.Name(name)))
         for name in ("conint", "confloat", "condecimal", "conbytes")
     ]
 )
-ANN_ASSIGN_CON_NUMBER_CALL = m.AnnAssign(annotation=m.Annotation(annotation=CON_NUMBER_CALL))
-
 CON_COLLECTION_CALL = m.OneOf(
     *[
         m.Call(func=m.Name(name) | m.Attribute(value=m.Name("pydantic"), attr=m.Name(name)))
         for name in ("conlist", "conset", "confrozenset")
     ]
 )
-ANN_ASSIGN_COLLECTION_CALL = m.AnnAssign(annotation=m.Annotation(annotation=CON_COLLECTION_CALL))
 
 MAP_FUNC_TO_TYPE = {
     "constr": "str",
@@ -48,18 +42,13 @@ class ConFuncCallCommand(VisitorBasedCodemodCommand):
     def __init__(self, context: CodemodContext) -> None:
         super().__init__(context)
 
-    @m.leave(ANN_ASSIGN_CONSTR_CALL | ANN_ASSIGN_CON_NUMBER_CALL | ANN_ASSIGN_COLLECTION_CALL)
-    def leave_ann_assign_constr_call(self, original_node: cst.AnnAssign, updated_node: cst.AnnAssign) -> cst.AnnAssign:
-        annotation = cast(cst.Call, original_node.annotation.annotation)
-        if m.matches(annotation.func, m.Name()):
-            func_name = cast(str, annotation.func.value)  # type: ignore
+    @m.leave(CON_NUMBER_CALL | CON_COLLECTION_CALL | CONSTR_CALL)
+    def leave_annotation_call(self, original_node: cst.Call, updated_node: cst.Call) -> cst.Subscript:
+        if m.matches(original_node.func, m.Name()):
+            func_name = cast(str, original_node.func.value)  # type: ignore
         else:
-            func_name = cast(str, annotation.func.attr.value)  # type: ignore
+            func_name = cast(str, original_node.func.attr.value)  # type: ignore
         type_name = MAP_FUNC_TO_TYPE[func_name]
-
-        # TODO: When FastAPI supports Pydantic 2.0.4+, remove the conditional below.
-        if func_name == "constr":
-            return updated_node
 
         needed_import = MAP_TYPE_TO_NEEDED_IMPORT.get(type_name)
         if needed_import is not None:
@@ -76,23 +65,20 @@ class ConFuncCallCommand(VisitorBasedCodemodCommand):
             slice_value = cst.Index(value=cst.Name(type_name))
 
         AddImportsVisitor.add_needed_import(context=self.context, module="typing_extensions", obj="Annotated")
-        annotated = cst.Subscript(
+        return cst.Subscript(
             value=cst.Name("Annotated"),
             slice=[
                 cst.SubscriptElement(slice=slice_value),
-                cst.SubscriptElement(slice=cst.Index(value=updated_node.annotation.annotation)),
+                cst.SubscriptElement(slice=cst.Index(value=updated_node)),
             ],
         )
-        annotation = cst.Annotation(annotation=annotated)  # type: ignore[assignment]
-        return updated_node.with_changes(annotation=annotation)
 
-    # TODO: When FastAPI supports Pydantic 2.0.4+, remove the comments below.
     @m.leave(CONSTR_CALL)
     def leave_constr_call(self, original_node: cst.Call, updated_node: cst.Call) -> cst.Call:
         self._remove_import(original_node.func)
-        # AddImportsVisitor.add_needed_import(context=self.context, module="pydantic", obj="StringConstraints")
+        AddImportsVisitor.add_needed_import(context=self.context, module="pydantic", obj="StringConstraints")
         return updated_node.with_changes(
-            # func=cst.Name("StringConstraints"),
+            func=cst.Name("StringConstraints"),
             args=[
                 arg if arg.keyword and arg.keyword.value != "regex" else arg.with_changes(keyword=cst.Name("pattern"))
                 for arg in updated_node.args

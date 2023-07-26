@@ -30,7 +30,7 @@ class Rule(str, Enum):
     BP007 = "BP007"
     """Replace `@validator` with `@field_validator`."""
     BP008 = "BP008"
-    """Replace `constr(<args>)` with `Annotated[str, StringConstraints(<args>)`."""
+    """Replace `con*` functions by `Annotated` versions."""
 
 
 def gather_codemods(disabled: List[Rule]) -> List[Type[ContextAwareTransformer]]:
