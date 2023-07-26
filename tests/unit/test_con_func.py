@@ -1,4 +1,3 @@
-import pytest
 from libcst.codemod import CodemodTest
 
 from bump_pydantic.codemods.con_func import ConFuncCallCommand
@@ -9,7 +8,6 @@ class TestFieldCommand(CodemodTest):
 
     maxDiff = None
 
-    @pytest.mark.xfail(reason="Annotated is not supported yet!")
     def test_constr_to_annotated(self) -> None:
         before = """
         from pydantic import BaseModel, constr
@@ -26,7 +24,6 @@ class TestFieldCommand(CodemodTest):
         """
         self.assertCodemod(before, after)
 
-    @pytest.mark.xfail(reason="Annotated is not supported yet!")
     def test_pydantic_constr_to_annotated(self) -> None:
         before = """
         import pydantic
@@ -74,5 +71,23 @@ class TestFieldCommand(CodemodTest):
 
         class Potato(BaseModel):
             potato: Annotated[int, Field(ge=0, le=100)]
+        """
+        self.assertCodemod(before, after)
+
+    def test_conint_to_optional_annotated(self) -> None:
+        before = """
+        from typing import Optional
+        from pydantic import BaseModel, conint
+
+        class Potato(BaseModel):
+            potato: Optional[conint(ge=0, le=100)]
+        """
+        after = """
+        from typing import Optional
+        from pydantic import Field, BaseModel
+        from typing_extensions import Annotated
+
+        class Potato(BaseModel):
+            potato: Optional[Annotated[int, Field(ge=0, le=100)]]
         """
         self.assertCodemod(before, after)

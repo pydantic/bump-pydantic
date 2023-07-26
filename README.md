@@ -186,6 +186,7 @@ Into:
 
 ```py
 from typing import Generic, TypeVar
+from pydantic import BaseModel
 
 T = TypeVar('T')
 
@@ -217,7 +218,7 @@ Into:
 ```py
 from typing import List
 
-from pydantic import RootModel
+from pydantic import RootModel, BaseModel
 
 class User(BaseModel):
     age: int
