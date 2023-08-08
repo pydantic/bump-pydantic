@@ -55,7 +55,7 @@ IMPORT_ROOT_VALIDATOR = m.Module(
         m.ZeroOrMore(),
     ]
 )
-ROOT_VALIDATOR_DECORATOR = m.Decorator(decorator=m.Call(func=m.Name("root_validator")))
+ROOT_VALIDATOR_DECORATOR = m.Decorator(decorator=m.Call(func=m.Name("root_validator")) | m.Name("root_validator"))
 ROOT_VALIDATOR_FUNCTION = m.FunctionDef(decorators=[m.ZeroOrMore(), ROOT_VALIDATOR_DECORATOR, m.ZeroOrMore()])
 
 
@@ -94,8 +94,19 @@ class ValidatorCodemod(VisitorBasedCodemodCommand):
                 else:
                     # The `check_fields` kw-argument and all positional arguments can be just copied.
                     self._args.append(arg)
+        elif m.matches(node.decorator, m.Name()):
+            # This only happens for `@root_validator` so we need to replace it with @model_validator(mode="after")
+            self._args.append(
+                cst.Arg(
+                    keyword=cst.Name("mode"),
+                    value=cst.SimpleString('"after"'),
+                    equal=cst.AssignEqual(
+                        whitespace_after=cst.SimpleWhitespace(""),
+                        whitespace_before=cst.SimpleWhitespace(""),
+                    ),
+                )
+            )
         else:
-            """This only happens for `@validator`, not with `@validator()`. The parenthesis makes it not be a `Call`"""
             self._should_add_comment = True
 
         # Removes the trailing comma on the last argument e.g.
@@ -155,7 +166,12 @@ class ValidatorCodemod(VisitorBasedCodemodCommand):
     def _replace_validators(self, node: cst.Decorator, old_name: str, new_name: str) -> cst.Decorator:
         RemoveImportsVisitor.remove_unused_import(self.context, "pydantic", old_name)
         AddImportsVisitor.add_needed_import(self.context, "pydantic", new_name)
-        decorator = node.decorator.with_changes(func=cst.Name(new_name), args=self._args)
+        if m.matches(node.decorator, m.Call()):
+            decorator = node.decorator.with_changes(func=cst.Name(new_name), args=self._args)
+        elif m.matches(node.decorator, m.Name()):  # @root_validator (Name, not Call) -> @model_validator(...) (Call)
+            decorator = cst.Call(func=cst.Name(new_name), args=self._args)
+        else:
+            raise RuntimeError("decorator as attribute is not implemented yet.")  # this should never happen ATM
         return node.with_changes(decorator=decorator)
 
 
