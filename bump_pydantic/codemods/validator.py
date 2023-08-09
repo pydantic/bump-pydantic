@@ -168,10 +168,11 @@ class ValidatorCodemod(VisitorBasedCodemodCommand):
         AddImportsVisitor.add_needed_import(self.context, "pydantic", new_name)
         if m.matches(node.decorator, m.Call()):
             decorator = node.decorator.with_changes(func=cst.Name(new_name), args=self._args)
-        elif m.matches(node.decorator, m.Name()):  # @root_validator (Name, not Call) -> @model_validator(...) (Call)
-            decorator = cst.Call(func=cst.Name(new_name), args=self._args)
         else:
-            raise RuntimeError("decorator as attribute is not implemented yet.")  # this should never happen ATM
+            # Assuming node.decorator matches Name()
+            # (once ROOT_VALIDATOR_DECORATOR supports Attribute() this needs a separate case).
+            # Changing `@root_validator` (Name, not Call) into `@model_validator(...)` (Call)
+            decorator = cst.Call(func=cst.Name(new_name), args=self._args)
         return node.with_changes(decorator=decorator)
 
 
