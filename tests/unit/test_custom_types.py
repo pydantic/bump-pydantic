@@ -45,7 +45,7 @@ class TestArbitraryClassCommand(CodemodTest):
         after = """
         class SomeThing:
             @classmethod
-            # TODO[pydantic]: We couldn't refactor this, please create the `__modify_schema__` manually.
+            # TODO[pydantic]: We couldn't refactor this, please create the `__get_pydantic_json_schema__` manually.
             # Check https://docs.pydantic.dev/latest/migration/#defining-custom-types for more information.
             def __modify_schema__(
                 cls, field_schema: Dict[str, Any], field: Optional[ModelField]
