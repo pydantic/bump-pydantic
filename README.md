@@ -368,6 +368,49 @@ class User(BaseModel):
     name: ImportString
 ``` -->
 
+### BP010: Mark pydantic "protocol" functions in custom types with proper TODOs
+
+- [ ] Mark `__get_validators__` as to be replaced by `__get_pydantic_core_schema__`.
+- [ ] Mark `__modify_schema__` as to be replaced by `__get_pydantic_json_schema__`.
+
+The following code will be transformed:
+
+```py
+class SomeThing:
+    @classmethod
+    def __get_validators__(cls):
+        yield from []
+        return
+
+    @classmethod
+    def __modify_schema__(
+        cls, field_schema: Dict[str, Any], field: Optional[ModelField]
+    ):
+        if field:
+            field_schema['example'] = "Weird example"
+```
+
+Into:
+
+```py
+class SomeThing:
+    @classmethod
+    # TODO[pydantic]: We couldn't refactor this, please create the `__get_pydantic_core_schema__` manually.
+    # Check https://docs.pydantic.dev/latest/migration/#defining-custom-types for more information.
+    def __get_validators__(cls):
+        yield from []
+        return
+
+    @classmethod
+    # TODO[pydantic]: We couldn't refactor this, please create the `__get_pydantic_json_schema__` manually.
+    # Check https://docs.pydantic.dev/latest/migration/#defining-custom-types for more information.
+    def __modify_schema__(
+        cls, field_schema: Dict[str, Any], field: Optional[ModelField]
+    ):
+        if field:
+            field_schema['example'] = "Weird example"
+```
+
 ---
 
 ## License
