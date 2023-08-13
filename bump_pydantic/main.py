@@ -4,6 +4,7 @@ import multiprocessing
 import os
 import time
 import traceback
+from collections import deque
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Set, Tuple, Type, TypeVar, Union
 
@@ -84,7 +85,7 @@ def main(
     scratch: dict[str, Any] = {}
     with Progress(*Progress.get_default_columns(), transient=True) as progress:
         task = progress.add_task(description="Looking for Pydantic Models...", total=len(files))
-        queue: List[str] = [files[0]]
+        queue = deque(files)
         visited: Set[str] = set()
 
         while queue:
@@ -111,11 +112,7 @@ def main(
             # Queue logic
             next_file = visitor.next_file(visited)
             if next_file is not None:
-                queue.append(next_file)
-
-            missing_files = set(files) - visited
-            if not queue and missing_files:
-                queue.append(next(iter(missing_files)))
+                queue.appendleft(next_file)
 
     start_time = time.time()
 
