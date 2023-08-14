@@ -67,7 +67,7 @@ def main(
         all_files = [path]
     else:
         package = path
-        all_files = list(package.glob("**/*.py"))
+        all_files = sorted(package.glob("**/*.py"))
 
     filtered_files = [file for file in all_files if not any(match_glob(file, pattern) for pattern in ignore)]
     files = [str(file.relative_to(".")) for file in filtered_files]
