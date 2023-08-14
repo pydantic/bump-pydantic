@@ -90,7 +90,7 @@ def main(
 
         while queue:
             # Queue logic
-            filename = queue.pop()
+            filename = queue.popleft()
             visited.add(filename)
             progress.advance(task)
 
