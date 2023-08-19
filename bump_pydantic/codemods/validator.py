@@ -140,6 +140,13 @@ class ValidatorCodemod(VisitorBasedCodemodCommand):
             self._should_add_comment = False
             return updated_node
 
+        # Check if a classmethod decorator already exists
+        if any(
+            m.matches(decorator, m.Decorator(decorator=m.Name("classmethod"))) for decorator in updated_node.decorators
+        ):
+            return updated_node  # If it already exists, return the node as is
+
+        # If it doesn't exist, add the classmethod decorator
         classmethod_decorator = cst.Decorator(decorator=cst.Name("classmethod"))
         return updated_node.with_changes(decorators=[*updated_node.decorators, classmethod_decorator])
 
