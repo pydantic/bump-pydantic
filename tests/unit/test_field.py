@@ -136,3 +136,18 @@ class TestFieldCommand(CodemodTest):
             potato: Annotated[List[int], Field(..., min_length=1, max_length=10)]
         """
         self.assertCodemod(before, after)
+
+    def test_example_list(self) -> None:
+        before = """
+        from pydantic import BaseSettings, Field
+
+        class Settings(BaseSettings):
+            potato: int = Field(..., example=1)
+        """
+        after = """
+        from pydantic import BaseSettings, Field
+
+        class Settings(BaseSettings):
+            potato: int = Field(..., examples=[1,])
+        """
+        self.assertCodemod(before, after)
