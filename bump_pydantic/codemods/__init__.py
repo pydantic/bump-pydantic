@@ -32,7 +32,7 @@ class Rule(str, Enum):
     """Replace `@validator` with `@field_validator`."""
     BP008 = "BP008"
     """Replace `con*` functions by `Annotated` versions."""
-    BP010 = "BP010"
+    BP009 = "BP009"
     """Mark pydantic 'protocol' functions in custom types with proper TODOs"""
 
 
@@ -64,7 +64,7 @@ def gather_codemods(disabled: List[Rule]) -> List[Type[ContextAwareTransformer]]
     if Rule.BP007 not in disabled:
         codemods.append(ValidatorCodemod)
 
-    if Rule.BP010 not in disabled:
+    if Rule.BP009 not in disabled:
         codemods.append(CustomTypeCodemod)
 
     # Those codemods need to be the last ones.
