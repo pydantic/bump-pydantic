@@ -125,7 +125,7 @@ class FieldCodemod(VisitorBasedCodemodCommand):
                             value = cst.Name("False")
                     if arg.keyword.value == "example":
                         # The example keyword is now a list, `examples`.
-                        value = cst.List([arg.value])
+                        value = cst.List([cst.Element(arg.value)])
                 new_arg = arg.with_changes(keyword=arg.keyword.with_changes(value=keyword), value=value)  # type: ignore
                 new_args.append(new_arg)  # type: ignore
             else:

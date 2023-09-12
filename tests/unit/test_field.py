@@ -148,6 +148,6 @@ class TestFieldCommand(CodemodTest):
         from pydantic import BaseSettings, Field
 
         class Settings(BaseSettings):
-            potato: int = Field(..., examples=[1,])
+            potato: int = Field(..., examples=[1])
         """
         self.assertCodemod(before, after)
