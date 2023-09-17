@@ -148,3 +148,32 @@ class Potato(BaseModel):
 """
         )
         assert module.code == expected
+
+    def test_with_field(self) -> None:
+        module = self.add_default_none(
+            "some/test/module.py",
+            """
+            from pydantic import BaseModel, Field
+            from typing import Optional
+
+            class Foo(BaseModel):
+                a: Optional[int] = Field()
+                c: Optional[int] = Field(...)
+                d: Optional[int] = Field(description="spam")
+                e: Optional[int] = Field(default=..., description="spam")
+                f: Optional[int] = Field(default=None, description="spam")
+            """,
+        )
+        expected = textwrap.dedent(
+            """from pydantic import BaseModel, Field
+from typing import Optional
+
+class Foo(BaseModel):
+    a: Optional[int] = Field(None)
+    c: Optional[int] = Field(...)
+    d: Optional[int] = Field(None, description="spam")
+    e: Optional[int] = Field(default=..., description="spam")
+    f: Optional[int] = Field(default=None, description="spam")
+"""
+        )
+        assert module.code == expected
