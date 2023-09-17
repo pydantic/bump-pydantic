@@ -38,10 +38,10 @@ cases = [
                 "    c: Union[int, None] = None",
                 "    d: Any = None",
                 "    e: Dict[str, str]",
-                "    f: Optional[int] = Field(None, lt=10)",
+                "    f: Optional[int] = Field(..., lt=10)",
                 "    g: Optional[int] = Field(None)",
-                "    h: Optional[int] = Field(None)",
-                "    i: Optional[int] = Field(default_factory=lambda: None)",
+                "    h: Optional[int] = Field(...)",
+                "    i: Optional[int] = Field(None, default_factory=lambda: None)",
             ],
         ),
     )
