@@ -81,18 +81,22 @@ class AddDefaultNoneCommand(VisitorBasedCodemodCommand):
         if self.inside_base_model and self.should_add_none:
             if updated_node.value is None:
                 updated_node = updated_node.with_changes(value=cst.Name("None"))
-            # TODO: Should accept `pydantic.Field` as well.
             elif m.matches(updated_node.value, m.Call(func=m.Name("Field"))):
                 assert isinstance(updated_node.value, cst.Call)
-                if updated_node.value.args:
-                    arg = updated_node.value.args[0]
-                    if (arg.keyword is None or arg.keyword.value == "default") and m.matches(arg.value, m.Ellipsis()):
+                args = updated_node.value.args
+                if args:
+                    # NOTE: It has a "default" value as positional argument. Nothing to do.
+                    if args[0].keyword is None:
+                        ...
+                    # NOTE: It has a "default" or "default_factory" keyword argument. Nothing to do.
+                    elif any(arg.keyword and arg.keyword.value in ("default", "default_factory") for arg in args):
+                        ...
+                    else:
                         updated_node = updated_node.with_changes(
-                            value=updated_node.value.with_changes(
-                                args=[arg.with_changes(value=cst.Name("None")), *updated_node.value.args[1:]]
-                            )
+                            value=updated_node.value.with_changes(args=[cst.Arg(value=cst.Name("None")), *args])
                         )
-                # This is the case where `Field` is called without any arguments e.g. `Field()`.
+
+                # NOTE: This is the case where `Field` is called without any arguments e.g. `Field()`.
                 else:
                     updated_node = updated_node.with_changes(
                         value=updated_node.value.with_changes(args=[cst.Arg(value=cst.Name("None"))])  # type: ignore
