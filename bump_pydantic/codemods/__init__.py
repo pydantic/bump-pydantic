@@ -6,6 +6,7 @@ from libcst.codemod.visitors import AddImportsVisitor, RemoveImportsVisitor
 
 from bump_pydantic.codemods.add_default_none import AddDefaultNoneCommand
 from bump_pydantic.codemods.con_func import ConFuncCallCommand
+from bump_pydantic.codemods.custom_types import CustomTypeCodemod
 from bump_pydantic.codemods.field import FieldCodemod
 from bump_pydantic.codemods.replace_config import ReplaceConfigCodemod
 from bump_pydantic.codemods.replace_generic_model import ReplaceGenericModelCommand
@@ -31,6 +32,8 @@ class Rule(str, Enum):
     """Replace `@validator` with `@field_validator`."""
     BP008 = "BP008"
     """Replace `con*` functions by `Annotated` versions."""
+    BP009 = "BP009"
+    """Mark Pydantic "protocol" functions in custom types with proper TODOs."""
 
 
 def gather_codemods(disabled: List[Rule]) -> List[Type[ContextAwareTransformer]]:
@@ -60,6 +63,9 @@ def gather_codemods(disabled: List[Rule]) -> List[Type[ContextAwareTransformer]]
 
     if Rule.BP007 not in disabled:
         codemods.append(ValidatorCodemod)
+
+    if Rule.BP009 not in disabled:
+        codemods.append(CustomTypeCodemod)
 
     # Those codemods need to be the last ones.
     codemods.extend([RemoveImportsVisitor, AddImportsVisitor])

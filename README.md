@@ -27,6 +27,8 @@ Bump Pydantic is a tool to help you migrate your code from Pydantic V1 to V2.
     - [BP006: Replace `__root__` by `RootModel`](#bp006-replace-__root__-by-rootmodel)
     - [BP007: Replace decorators](#bp007-replace-decorators)
     - [BP008: Replace `con*` functions by `Annotated` versions](#bp008-replace-con-functions-by-annotated-versions)
+    - [BP009: Mark pydantic "protocol" functions in custom types with proper TODOs](bp009-mark-pydantic-protocol-functions-in-custom-types-with-proper-todos)
+
   - [License](#license)
 
 ---
@@ -301,7 +303,44 @@ class User(BaseModel):
     name: Annotated[str, StringConstraints(min_length=1)]
 ```
 
-<!-- ### BP009: Replace `pydantic.parse_obj_as` by `pydantic.TypeAdapter`
+### BP009: Mark Pydantic "protocol" functions in custom types with proper TODOs
+
+- ✅ Mark `__get_validators__` as to be replaced by `__get_pydantic_core_schema__`.
+- ✅ Mark `__modify_schema__` as to be replaced by `__get_pydantic_json_schema__`.
+
+The following code will be transformed:
+
+```py
+class SomeThing:
+    @classmethod
+    def __get_validators__(cls):
+        yield from []
+
+    @classmethod
+    def __modify_schema__(cls, field_schema, field):
+        if field:
+            field_schema['example'] = "Weird example"
+```
+
+Into:
+
+```py
+class SomeThing:
+    @classmethod
+    # TODO[pydantic]: We couldn't refactor `__get_validators__`, please create the `__get_pydantic_core_schema__` manually.
+    # Check https://docs.pydantic.dev/latest/migration/#defining-custom-types for more information.
+    def __get_validators__(cls):
+        yield from []
+
+    @classmethod
+    # TODO[pydantic]: We couldn't refactor `__modify_schema__`, please create the `__get_pydantic_json_schema__` manually.
+    # Check https://docs.pydantic.dev/latest/migration/#defining-custom-types for more information.
+    def __modify_schema__(cls, field_schema, field):
+        if field:
+            field_schema['example'] = "Weird example"
+```
+
+<!-- ### BP010: Replace `pydantic.parse_obj_as` by `pydantic.TypeAdapter`
 
 - ✅ Replace `pydantic.parse_obj_as(T, obj)` to `pydantic.TypeAdapter(T).validate_python(obj)`.
 
@@ -344,7 +383,7 @@ class Users(BaseModel):
 users = TypeAdapter(Users).validate_python({'users': [{'name': 'John'}]})
 ``` -->
 
-<!-- ### BP010: Replace `PyObject` by `ImportString`
+<!-- ### BP011: Replace `PyObject` by `ImportString`
 
 - ✅ Replace `PyObject` by `ImportString`.
 
