@@ -9,6 +9,7 @@ RENAMED_KEYWORDS = {
     "min_items": "min_length",
     "max_items": "max_length",
     "allow_mutation": "frozen",
+    "example": "examples",
     "regex": "pattern",
     # NOTE: This is only for BaseSettings.
     "env": "validation_alias",
@@ -115,12 +116,16 @@ class FieldCodemod(VisitorBasedCodemodCommand):
             if m.matches(arg, m.Arg(keyword=m.Name())):
                 keyword = RENAMED_KEYWORDS.get(arg.keyword.value, arg.keyword.value)  # type: ignore
                 value = arg.value
-                # The `allow_mutation` keyword argument is a special case. It's the negative of `frozen`.
-                if arg.keyword and arg.keyword.value == "allow_mutation":
-                    if m.matches(arg.value, m.Name(value="False")):
-                        value = cst.Name("True")
-                    elif m.matches(arg.value, m.Name(value="True")):
-                        value = cst.Name("False")
+                if arg.keyword:
+                    if arg.keyword.value == "allow_mutation":
+                        # The `allow_mutation` keyword is the negative of `frozen`.
+                        if m.matches(arg.value, m.Name(value="False")):
+                            value = cst.Name("True")
+                        elif m.matches(arg.value, m.Name(value="True")):
+                            value = cst.Name("False")
+                    if arg.keyword.value == "example":
+                        # The example keyword is now a list, `examples`.
+                        value = cst.List([cst.Element(arg.value)])
                 new_arg = arg.with_changes(keyword=arg.keyword.with_changes(value=keyword), value=value)  # type: ignore
                 new_args.append(new_arg)  # type: ignore
             else:
