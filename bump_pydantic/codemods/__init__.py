@@ -33,7 +33,7 @@ class Rule(str, Enum):
     BP008 = "BP008"
     """Replace `con*` functions by `Annotated` versions."""
     BP009 = "BP009"
-    '''Mark Pydantic "protocol" functions in custom types with proper TODOs.'''
+    """Mark Pydantic "protocol" functions in custom types with proper TODOs."""
 
 
 def gather_codemods(disabled: List[Rule]) -> List[Type[ContextAwareTransformer]]:
