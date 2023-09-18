@@ -303,7 +303,7 @@ class User(BaseModel):
     name: Annotated[str, StringConstraints(min_length=1)]
 ```
 
-### BP009: Mark pydantic "protocol" functions in custom types with proper TODOs
+### BP009: Mark Pydantic "protocol" functions in custom types with proper TODOs
 
 - ✅ Mark `__get_validators__` as to be replaced by `__get_pydantic_core_schema__`.
 - ✅ Mark `__modify_schema__` as to be replaced by `__get_pydantic_json_schema__`.
@@ -315,12 +315,9 @@ class SomeThing:
     @classmethod
     def __get_validators__(cls):
         yield from []
-        return
 
     @classmethod
-    def __modify_schema__(
-        cls, field_schema: Dict[str, Any], field: Optional[ModelField]
-    ):
+    def __modify_schema__(cls, field_schema, field):
         if field:
             field_schema['example'] = "Weird example"
 ```
@@ -334,14 +331,11 @@ class SomeThing:
     # Check https://docs.pydantic.dev/latest/migration/#defining-custom-types for more information.
     def __get_validators__(cls):
         yield from []
-        return
 
     @classmethod
     # TODO[pydantic]: We couldn't refactor `__modify_schema__`, please create the `__get_pydantic_json_schema__` manually.
     # Check https://docs.pydantic.dev/latest/migration/#defining-custom-types for more information.
-    def __modify_schema__(
-        cls, field_schema: Dict[str, Any], field: Optional[ModelField]
-    ):
+    def __modify_schema__(cls, field_schema, field):
         if field:
             field_schema['example'] = "Weird example"
 ```
@@ -412,8 +406,6 @@ from pydantic import BaseModel, ImportString
 class User(BaseModel):
     name: ImportString
 ``` -->
-
-
 
 ---
 
