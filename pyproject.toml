@@ -20,7 +20,11 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
+  "License :: OSI Approved :: MIT License",
   "Framework :: Pydantic",
+  "Environment :: Console",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Topic :: Internet",
 ]
 dependencies = ["typer>=0.7.0", "libcst", "rich", "typing_extensions"]
 
