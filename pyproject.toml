@@ -23,8 +23,7 @@ classifiers = [
   "License :: OSI Approved :: MIT License",
   "Framework :: Pydantic",
   "Environment :: Console",
-  "Topic :: Software Development :: Libraries :: Python Modules",
-  "Topic :: Internet",
+  "Topic :: Software Development :: Code Generators",
 ]
 dependencies = ["typer>=0.7.0", "libcst", "rich", "typing_extensions"]
 
