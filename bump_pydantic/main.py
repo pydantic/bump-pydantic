@@ -2,6 +2,7 @@ import difflib
 import functools
 import multiprocessing
 import os
+import platform
 import time
 import traceback
 from collections import deque
@@ -38,9 +39,16 @@ def version_callback(value: bool):
         raise Exit()
 
 
+_MAX_JOBS_SUPPORTED_DEFAULT = multiprocessing.cpu_count()
+
+if platform.system() == "Windows":
+    _MAX_JOBS_SUPPORTED_DEFAULT = 61
+
+
 @app.callback()
 def main(
     path: Path = Argument(..., exists=True, dir_okay=True, allow_dash=False),
+    number_of_jobs: int = Option(default=_MAX_JOBS_SUPPORTED_DEFAULT, help="Number of jobs to run in parallel"),
     disable: List[Rule] = Option(default=[], help="Disable a rule."),
     diff: bool = Option(False, help="Show diff instead of applying changes."),
     ignore: List[str] = Option(default=DEFAULT_IGNORES, help="Ignore a path glob pattern."),
@@ -59,6 +67,14 @@ def main(
     """
     console = Console(log_time=True)
     console.log("Start bump-pydantic.")
+
+    if platform.system() == "Windows" and number_of_jobs > _MAX_JOBS_SUPPORTED_DEFAULT:
+        console.log(
+            f"Given number of jobs {number_of_jobs} exceeds maximum allowed number "
+            f"{_MAX_JOBS_SUPPORTED_DEFAULT}. Using {_MAX_JOBS_SUPPORTED_DEFAULT} instead."
+        )
+        number_of_jobs = _MAX_JOBS_SUPPORTED_DEFAULT
+
     # NOTE: LIBCST_PARSER_TYPE=native is required according to https://github.com/Instagram/LibCST/issues/487.
     os.environ["LIBCST_PARSER_TYPE"] = "native"
 
@@ -124,7 +140,7 @@ def main(
         task = progress.add_task(description="Executing codemods...", total=len(files))
         count_errors = 0
         difflines: List[List[str]] = []
-        with multiprocessing.Pool() as pool:
+        with multiprocessing.Pool(processes=number_of_jobs) as pool:
             for error, _difflines in pool.imap_unordered(partial_run_codemods, files):
                 progress.advance(task)
 
