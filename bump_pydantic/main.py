@@ -196,11 +196,11 @@ def run_codemods(
                     fp.write(output_code)
                     fp.truncate()
         return None, None
-    except cst.ParserSyntaxError:
+    except cst.ParserSyntaxError as exc:
         return (
             f"A syntax error happened on {filename}. This file cannot be formatted.\n"
             "Check https://github.com/pydantic/bump-pydantic/issues/124 for more information.\n"
-            f"{traceback.format_exc()}"
+            f"{exc}"
         ), None
     except Exception:
         return f"An error happened on {filename}.\n{traceback.format_exc()}", None
