@@ -72,8 +72,10 @@ def main(
     filtered_files = [file for file in all_files if not any(match_glob(file, pattern) for pattern in ignore)]
     files = [str(file.relative_to(".")) for file in filtered_files]
 
-    if files:
-        console.log(f"Found {len(files)} files to process")
+    if len(files) == 1:
+        console.log("Found 1 file to process.")
+    elif len(files) > 1:
+        console.log(f"Found {len(files)} files to process.")
     else:
         console.log("No files to process.")
         raise Exit()
@@ -137,8 +139,11 @@ def main(
 
     modified = [Path(f) for f in files if os.stat(f).st_mtime > start_time]
 
-    if modified and not diff:
-        console.log(f"Refactored {len(modified)} files.")
+    if not diff:
+        if modified:
+            console.log(f"Refactored {len(modified)} files.")
+        else:
+            console.log("No files were modified.")
 
     for _difflines in difflines:
         color_diff(console, _difflines)
