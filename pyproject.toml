@@ -22,7 +22,7 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: PyPy",
   "Framework :: Pydantic",
 ]
-dependencies = ["typer>=0.7.0", "libcst", "rich", "typing_extensions"]
+dependencies = ["typer>=0.7.0", "libcst>=0.4.2", "rich", "typing_extensions"]
 
 [project.urls]
 Documentation = "https://github.com/pydantic/bump-pydantic#readme"
@@ -37,15 +37,14 @@ path = "bump_pydantic/__init__.py"
 
 [tool.hatch.envs.default]
 dependencies = [
-  "black>=23.1.0",
+  "black>=23.12.1",
   "coverage[toml]>=6.5",
-  "mypy>=1.0.0",
+  "mypy==1.8.0",
   "pydantic",
-  "pytest-xdist",
   "pytest",
   "rich",
   "rtoml",
-  "ruff>=0.0.243",
+  "ruff==0.1.9",
 ]
 
 [tool.hatch.envs.default.scripts]
@@ -69,8 +68,21 @@ skip-string-normalization = true
 target-version = ["py38"]
 
 [tool.ruff]
-extend-select = ['A', 'B', 'C4', 'C90', 'I', 'Q', 'PERF', 'PT', 'RUF100', 'UP', 'W']
-ignore = ['B008']  # That's how Typer works.
+extend-select = [
+  'A',
+  'B',
+  'C4',
+  'C90',
+  'E501',
+  'I',
+  'Q',
+  'PERF',
+  'PT',
+  'RUF100',
+  'UP',
+  'W',
+]
+ignore = ['B008'] # That's how Typer works.
 isort = { known-first-party = ['bump_pydantic', 'tests'] }
 line-length = 120
 mccabe = { max-complexity = 14 }
@@ -79,9 +91,9 @@ target-version = 'py38'
 [tool.pytest.ini_options]
 xfail_strict = true
 filterwarnings = [
-    # Turn warnings that aren't filtered into exceptions
-    "error",
-    "ignore::pytest.PytestUnraisableExceptionWarning"
+  # Turn warnings that aren't filtered into exceptions
+  "error",
+  "ignore::pytest.PytestUnraisableExceptionWarning",
 ]
 
 [tool.coverage.run]
