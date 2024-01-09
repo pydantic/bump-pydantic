@@ -1,9 +1,11 @@
-import pytest
-import sys
-import io
 import importlib
-from libcst.codemod import CodemodTest
+import io
+import sys
 from contextlib import contextmanager
+
+import pytest
+from libcst.codemod import CodemodTest
+
 from bump_pydantic.codemods.replace_imports import ReplaceImportsCodemod
 
 
