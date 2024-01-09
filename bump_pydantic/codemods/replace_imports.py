@@ -13,10 +13,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Sequence
 
+import sys
 import libcst as cst
 import libcst.matchers as m
 from libcst.codemod import CodemodContext, VisitorBasedCodemodCommand
 from libcst.codemod.visitors import AddImportsVisitor
+from importlib.util import find_spec
 
 IMPORTS = {
     "pydantic:BaseSettings": ("pydantic_settings", "BaseSettings"),
@@ -33,6 +35,13 @@ IMPORTS = {
         "PaymentCardNumber",
     ),
 }
+
+
+def find_package_install(package_name: str) -> bool:
+    try:
+        return find_spec(package_name) is not None
+    except ModuleNotFoundError:
+        return False
 
 
 def resolve_module_parts(module_parts: list[str]) -> m.Attribute | m.Name:
@@ -98,11 +107,20 @@ IMPORT_MATCH = m.OneOf(*[info.import_from for info in IMPORT_INFOS])
 class ReplaceImportsCodemod(VisitorBasedCodemodCommand):
     @m.leave(IMPORT_MATCH)
     def leave_replace_import(self, _: cst.ImportFrom, updated_node: cst.ImportFrom) -> cst.ImportFrom:
+        to_do_warnings = set()
         for import_info in IMPORT_INFOS:
             if m.matches(updated_node, import_info.import_from):
                 aliases: Sequence[cst.ImportAlias] = updated_node.names  # type: ignore
                 # If multiple objects are imported in a single import statement,
                 # we need to remove only the one we're replacing.
+                package_not_installed = not find_package_install(import_info.to_import_str[0])
+                if package_not_installed:
+                    import_info_part = import_info.to_import_str[0].split('.')[0]
+                    to_do_warning = f" #todo: please install {import_info_part}\n"
+                    if to_do_warning not in to_do_warnings:
+                        sys.stdout.write(to_do_warning)
+                        sys.stdout.flush()
+                        to_do_warnings.add(to_do_warning)
                 AddImportsVisitor.add_needed_import(self.context, *import_info.to_import_str)
                 if len(updated_node.names) > 1:  # type: ignore
                     names = [alias for alias in aliases if alias.name.value != import_info.to_import_str[-1]]
