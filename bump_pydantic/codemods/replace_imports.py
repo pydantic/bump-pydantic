@@ -10,15 +10,15 @@ This codemod deals with the following cases:
 
 from __future__ import annotations
 
+import sys
 from dataclasses import dataclass
+from importlib.util import find_spec
 from typing import Sequence
 
-import sys
 import libcst as cst
 import libcst.matchers as m
 from libcst.codemod import CodemodContext, VisitorBasedCodemodCommand
 from libcst.codemod.visitors import AddImportsVisitor
-from importlib.util import find_spec
 
 IMPORTS = {
     "pydantic:BaseSettings": ("pydantic_settings", "BaseSettings"),
@@ -115,7 +115,7 @@ class ReplaceImportsCodemod(VisitorBasedCodemodCommand):
                 # we need to remove only the one we're replacing.
                 package_not_installed = not find_package_install(import_info.to_import_str[0])
                 if package_not_installed:
-                    import_info_part = import_info.to_import_str[0].split('.')[0]
+                    import_info_part = import_info.to_import_str[0].split(".")[0]
                     to_do_warning = f" #todo: please install {import_info_part}\n"
                     if to_do_warning not in to_do_warnings:
                         sys.stdout.write(to_do_warning)
