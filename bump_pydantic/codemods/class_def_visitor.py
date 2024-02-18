@@ -9,6 +9,7 @@ There are two objects in the visitor:
 1.1. If it is, and if any `base_model_cls` is found, remove from `cls`, and add to `base_model_cls`.
 1.2. If it's not, it continues on the `cls`
 """
+
 from __future__ import annotations
 
 from collections import defaultdict
