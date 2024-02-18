@@ -151,3 +151,33 @@ class TestFieldCommand(CodemodTest):
             potato: int = Field(..., examples=[1])
         """
         self.assertCodemod(before, after)
+
+    def test_json_schema_extra_exist(self) -> None:
+        before = """
+        from pydantic import BaseModel, Field
+        
+        class Human(BaseModel):
+            name: str = Field(..., some_extra_field="some_extra_field_value", json_schema_extra={"a": "b"})
+        """
+        after = """
+        from pydantic import BaseModel, Field
+        
+        class Human(BaseModel):
+            name: str = Field(..., json_schema_extra={"some_extra_field": "some_extra_field_value", "a": "b"})
+        """
+        self.assertCodemod(before, after)
+
+    def test_json_schema_extra_not_exist(self) -> None:
+        before = """
+        from pydantic import BaseModel, Field
+
+        class Human(BaseModel):
+            name: str = Field(..., min_length=1, some_extra_field="some_extra_field_value")
+        """
+        after = """
+        from pydantic import BaseModel, Field
+
+        class Human(BaseModel):
+            name: str = Field(..., min_length=1, json_schema_extra={"some_extra_field": "some_extra_field_value"})
+        """
+        self.assertCodemod(before, after)
