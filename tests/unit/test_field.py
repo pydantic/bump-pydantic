@@ -155,13 +155,13 @@ class TestFieldCommand(CodemodTest):
     def test_json_schema_extra_exist(self) -> None:
         before = """
         from pydantic import BaseModel, Field
-        
+
         class Human(BaseModel):
             name: str = Field(..., some_extra_field="some_extra_field_value", json_schema_extra={"a": "b"})
         """
         after = """
         from pydantic import BaseModel, Field
-        
+
         class Human(BaseModel):
             name: str = Field(..., json_schema_extra={"some_extra_field": "some_extra_field_value", "a": "b"})
         """
