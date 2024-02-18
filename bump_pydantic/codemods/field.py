@@ -116,21 +116,22 @@ class FieldCodemod(VisitorBasedCodemodCommand):
         new_args: List[cst.Arg] = []
         for arg in updated_node.args:
             if m.matches(arg, m.Arg(keyword=m.Name())):
-                if arg.keyword.value == "json_schema_extra":
-                    json_schema_extra_elements.extend(arg.value.elements)  # type: ignore
-                    continue
+                if arg.keyword is not None:
+                    if arg.keyword.value == "json_schema_extra":
+                        json_schema_extra_elements.extend(arg.value.elements)  # type: ignore
+                        continue
 
-                if (
-                    (arg.keyword.value not in RENAMED_KEYWORDS)
-                    and (arg.keyword.value not in Field.__annotations__)
-                    and (arg.keyword != "extra")
-                ):
-                    new_dict_element = cst.DictElement(
-                        key=cst.SimpleString(value=f'"{arg.keyword.value}"'), value=arg.value,
-
-                    )
-                    json_schema_extra_elements.append(new_dict_element)
-                    continue
+                    if (
+                        (arg.keyword.value not in RENAMED_KEYWORDS)
+                        and (arg.keyword.value not in Field.__annotations__)
+                        and (arg.keyword != "extra")
+                    ):
+                        new_dict_element = cst.DictElement(
+                            key=cst.SimpleString(value=f'"{arg.keyword.value}"'),
+                            value=arg.value,
+                        )
+                        json_schema_extra_elements.append(new_dict_element)
+                        continue
 
                 keyword = RENAMED_KEYWORDS.get(arg.keyword.value, arg.keyword.value)  # type: ignore
                 value = arg.value
