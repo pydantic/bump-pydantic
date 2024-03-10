@@ -28,6 +28,8 @@ cases = [
                 "    m: Optional[int] = Field(lt=10)",
                 "    n: Optional[int] = Field(default=...)",
                 "    o: Optional[int] = Field(default=None)",
+                "    p: Optional[int] = Field()",
+                "    q: Optional[int] = Field(lt=10)",
             ],
         ),
         expected=File(
@@ -54,6 +56,8 @@ cases = [
                 "    m: Optional[int] = Field(None, lt=10)",
                 "    n: Optional[int] = Field(default=...)",
                 "    o: Optional[int] = Field(default=None)",
+                "    p: Optional[int] = Field(None)",
+                # "    q: Optional[int] = Field(None, lt=10)",
             ],
         ),
     )
