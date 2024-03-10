@@ -57,7 +57,7 @@ cases = [
                 "    n: Optional[int] = Field(default=...)",
                 "    o: Optional[int] = Field(default=None)",
                 "    p: Optional[int] = Field(None)",
-                # "    q: Optional[int] = Field(None, lt=10)",
+                "    q: Optional[int] = Field(None, lt=10)",
             ],
         ),
     )
