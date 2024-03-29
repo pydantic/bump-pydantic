@@ -41,7 +41,7 @@ path = "bump_pydantic/__init__.py"
 
 [tool.hatch.envs.default]
 dependencies = [
-  "black>=23.12.1",
+  "black==23.12.1",
   "coverage[toml]>=6.5",
   "mypy==1.8.0",
   "pydantic",
