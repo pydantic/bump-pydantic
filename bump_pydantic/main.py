@@ -29,7 +29,7 @@ entrypoint = functools.partial(app, windows_expand_args=False)
 P = ParamSpec("P")
 T = TypeVar("T")
 
-DEFAULT_IGNORES = [".venv/**"]
+DEFAULT_IGNORES = [".venv/**", ".tox/**"]
 
 
 def version_callback(value: bool):
