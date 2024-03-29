@@ -2,6 +2,7 @@ import difflib
 import functools
 import multiprocessing
 import os
+import platform
 import time
 import traceback
 from collections import deque
@@ -30,6 +31,11 @@ P = ParamSpec("P")
 T = TypeVar("T")
 
 DEFAULT_IGNORES = [".venv/**", ".tox/**"]
+
+processes = os.cpu_count()
+# Windows has a limit of 61 processes. See https://github.com/python/cpython/issues/89240.
+if platform.system() == "Windows" and processes is not None:
+    processes = min(processes, 61)
 
 
 def version_callback(value: bool):
@@ -126,7 +132,7 @@ def main(
         task = progress.add_task(description="Executing codemods...", total=len(files))
         count_errors = 0
         difflines: List[List[str]] = []
-        with multiprocessing.Pool() as pool:
+        with multiprocessing.Pool(processes=processes) as pool:
             for error, _difflines in pool.imap_unordered(partial_run_codemods, files):
                 progress.advance(task)
 
