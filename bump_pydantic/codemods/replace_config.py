@@ -217,22 +217,20 @@ class ReplaceConfigCodemod(VisitorBasedCodemodCommand):
         AddImportsVisitor.add_needed_import(context=self.context, **needed_import)  # type: ignore[arg-type]
         block = cst.ensure_type(updated_node.body, cst.IndentedBlock)
         body = [
-            (
-                cst.SimpleStatementLine(
-                    body=[
-                        cst.Assign(
-                            targets=[cst.AssignTarget(target=cst.Name("model_config"))],
-                            value=cst.Call(
-                                func=cst.Name("SettingsConfigDict" if self.is_base_settings else "ConfigDict"),
-                                args=self.config_args,
-                            ),
-                        )
-                    ],
-                    leading_lines=self._leading_lines_from_removed_keys(self.config_args),
-                )
-                if m.matches(statement, m.ClassDef(name=m.Name(value="Config")))
-                else statement
+            cst.SimpleStatementLine(
+                body=[
+                    cst.Assign(
+                        targets=[cst.AssignTarget(target=cst.Name("model_config"))],
+                        value=cst.Call(
+                            func=cst.Name("SettingsConfigDict" if self.is_base_settings else "ConfigDict"),
+                            args=self.config_args,
+                        ),
+                    )
+                ],
+                leading_lines=self._leading_lines_from_removed_keys(self.config_args),
             )
+            if m.matches(statement, m.ClassDef(name=m.Name(value="Config")))
+            else statement
             for statement in block.body
         ]
         self.is_base_settings = False
