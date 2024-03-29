@@ -16,17 +16,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: set up python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.10"
 
       - name: Install hatch
         run: pip install hatch
 
-      - uses: pre-commit/action@v3.0.0
+      - uses: pre-commit/action@v3.0.1
         with:
           extra_args: --all-files
 
@@ -42,10 +42,10 @@ jobs:
 
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: set up python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "${{ matrix.python-version }}"
 
@@ -78,10 +78,10 @@ jobs:
       id-token: write
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: set up python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
@@ -89,7 +89,7 @@ jobs:
         run: pip install -U build
 
       - name: check GITHUB_REF matches package version
-        uses: samuelcolvin/check-python-version@v3.1
+        uses: samuelcolvin/check-python-version@v4.1
         with:
           version_file_path: bump_pydantic/__init__.py
 
