@@ -7,6 +7,7 @@ This codemod deals with the following cases:
 4. `from pydantic.settings import BaseSettings as <name>`  # TODO: This is not working.
 5. `import pydantic` -> `pydantic.BaseSettings`
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
