@@ -9,7 +9,9 @@ from libcst.metadata import ClassScope, ScopeProvider
 PREFIX_COMMENT = "# TODO[pydantic]: "
 REFACTOR_COMMENT = f"{PREFIX_COMMENT}We couldn't refactor this class, please create the `model_config` manually."
 REMOVED_KEYS_COMMENT = f"{PREFIX_COMMENT}The following keys were removed: {{keys}}."
-INHERIT_CONFIG_COMMENT = f"{PREFIX_COMMENT}The `Config` class inherits from another class, please create the `model_config` manually."  # noqa: E501
+INHERIT_CONFIG_COMMENT = (
+    f"{PREFIX_COMMENT}The `Config` class inherits from another class, please create the `model_config` manually."
+)
 CHECK_LINK_COMMENT = "# Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information."
 
 REMOVED_KEYS = [

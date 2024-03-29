@@ -48,18 +48,13 @@ dependencies = [
   "pytest",
   "rich",
   "rtoml",
-  "ruff==0.1.9",
+  "ruff==0.3.4",
 ]
 
 [tool.hatch.envs.default.scripts]
 cov = ["test-cov", "cov-report"]
 cov-report = ["- coverage combine", "coverage report"]
-format = ["black {args:.}", "ruff --fix {args:.}"]
-lint = [
-  "ruff {args:.}",
-  "black --check --diff {args:.}",
-  "mypy {args:bump_pydantic tests}",
-]
+lint = ["ruff format {args:.}", "ruff check --fix --exit-non-zero-on-fix {args:.}", "mypy {args:bump_pydantic tests}"]
 test = "pytest {args:tests}"
 test-cov = "coverage run -m pytest {args:tests}"
 
@@ -72,6 +67,10 @@ skip-string-normalization = true
 target-version = ["py38"]
 
 [tool.ruff]
+line-length = 120
+target-version = 'py38'
+
+[tool.ruff.lint]
 extend-select = [
   'A',
   'B',
@@ -88,9 +87,7 @@ extend-select = [
 ]
 ignore = ['B008'] # That's how Typer works.
 isort = { known-first-party = ['bump_pydantic', 'tests'] }
-line-length = 120
 mccabe = { max-complexity = 14 }
-target-version = 'py38'
 
 [tool.pytest.ini_options]
 xfail_strict = true
