@@ -15,7 +15,6 @@ INHERIT_CONFIG_COMMENT = (
 CHECK_LINK_COMMENT = "# Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information."
 
 REMOVED_KEYS = [
-    "allow_mutation",
     "error_msg_templates",
     "fields",
     "getter_dict",
@@ -38,6 +37,7 @@ RENAMED_KEYS = {
     "orm_mode": "from_attributes",
     "schema_extra": "json_schema_extra",
     "validate_all": "validate_default",
+    "allow_mutation": "frozen",
 }
 
 EXTRA_ATTRIBUTE = m.Attribute(
@@ -171,6 +171,12 @@ class ReplaceConfigCodemod(VisitorBasedCodemodCommand):
                 RemoveImportsVisitor.remove_unused_import(self.context, "pydantic", "Extra")
             else:
                 value = self.assign_value  # type: ignore[assignment]
+            if node.target.value == "allow_mutation":
+                # The `allow_mutation` keyword is the negative of `frozen`.
+                if m.matches(value, m.Name(value="False")):
+                    value = cst.Name("True")
+                elif m.matches(value, m.Name(value="True")):
+                    value = cst.Name("False")
             self.config_args.append(
                 cst.Arg(
                     keyword=node.target.with_changes(value=keyword),  # type: ignore[arg-type]

@@ -192,21 +192,37 @@ class TestReplaceConfigCommand(CodemodTest):
         """
         self.assertCodemod(before, after)
 
+    def test_allow_mutation(self) -> None:
+        before = """
+        from pydantic import BaseModel
+
+        class Potato(BaseModel):
+            class Config:
+                allow_mutation = False
+        """
+        after = """
+        from pydantic import ConfigDict, BaseModel
+
+        class Potato(BaseModel):
+            model_config = ConfigDict(frozen=True)
+        """
+        self.assertCodemod(before, after)
+
     def test_removed_keys(self) -> None:
         before = """
         from pydantic import BaseModel
 
         class Potato(BaseModel):
             class Config:
-                allow_mutation = True
+                underscore_attrs_are_private = True
         """
         after = """
         from pydantic import ConfigDict, BaseModel
 
         class Potato(BaseModel):
-            # TODO[pydantic]: The following keys were removed: `allow_mutation`.
+            # TODO[pydantic]: The following keys were removed: `underscore_attrs_are_private`.
             # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
-            model_config = ConfigDict(allow_mutation=True)
+            model_config = ConfigDict(underscore_attrs_are_private=True)
         """
         self.assertCodemod(before, after)
 
@@ -216,16 +232,16 @@ class TestReplaceConfigCommand(CodemodTest):
 
         class Potato(BaseModel):
             class Config:
-                allow_mutation = True
+                underscore_attrs_are_private = True
                 smart_union = True
         """
         after = """
         from pydantic import ConfigDict, BaseModel
 
         class Potato(BaseModel):
-            # TODO[pydantic]: The following keys were removed: `allow_mutation`, `smart_union`.
+            # TODO[pydantic]: The following keys were removed: `underscore_attrs_are_private`, `smart_union`.
             # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
-            model_config = ConfigDict(allow_mutation=True, smart_union=True)
+            model_config = ConfigDict(underscore_attrs_are_private=True, smart_union=True)
         """
         self.assertCodemod(before, after)
 
