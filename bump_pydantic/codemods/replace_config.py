@@ -164,13 +164,14 @@ class ReplaceConfigCodemod(VisitorBasedCodemodCommand):
         self.assign_value = node.value
 
     def visit_AssignTarget(self, node: cst.AssignTarget) -> None:
-        if self.inside_config_class:
-            keyword = RENAMED_KEYS.get(node.target.value, node.target.value)  # type: ignore[attr-defined]
+        if self.inside_config_class and isinstance(node.target, cst.Name):
+            keyword = RENAMED_KEYS.get(node.target.value, node.target.value)
+            value: cst.BaseExpression
             if m.matches(self.assign_value, EXTRA_ATTRIBUTE):
                 value = cst.SimpleString(value=f'"{self.assign_value.attr.value}"')  # type: ignore[attr-defined]
                 RemoveImportsVisitor.remove_unused_import(self.context, "pydantic", "Extra")
             else:
-                value = self.assign_value  # type: ignore[assignment]
+                value = self.assign_value
             if node.target.value == "allow_mutation":
                 # The `allow_mutation` keyword is the negative of `frozen`.
                 if m.matches(value, m.Name(value="False")):
@@ -179,7 +180,7 @@ class ReplaceConfigCodemod(VisitorBasedCodemodCommand):
                     value = cst.Name("False")
             self.config_args.append(
                 cst.Arg(
-                    keyword=node.target.with_changes(value=keyword),  # type: ignore[arg-type]
+                    keyword=node.target.with_changes(value=keyword),
                     value=value,
                     equal=cst.AssignEqual(
                         whitespace_before=cst.SimpleWhitespace(""),
