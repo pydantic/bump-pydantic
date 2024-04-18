@@ -340,6 +340,44 @@ class SomeThing:
             field_schema['example'] = "Weird example"
 ```
 
+### BP010: Add type annotations or TODO comments to fields without them
+
+- ✅ Add type annotations based on the default value for a few types that can be inferred, like `bool`, `str`, `int`, `float`.
+- ✅ Add `# TODO[pydantic]: add type annotation` comments to fields that can't be inferred.
+
+The following code will be transformed:
+
+```py
+from pydantic import BaseModel, Field
+
+class Potato(BaseModel):
+    name: str
+    is_sale = True
+    tags = ["tag1", "tag2"]
+    price = 10.5
+    description = "Some item"
+    active = Field(default=True)
+    ready = Field(True)
+    age = Field(10, title="Age")
+```
+
+Into:
+
+```py
+from pydantic import BaseModel, Field
+
+class Potato(BaseModel):
+    name: str
+    is_sale: bool = True
+    # TODO[pydantic]: add type annotation
+    tags = ["tag1", "tag2"]
+    price: float = 10.5
+    description: str = "Some item"
+    active: bool = Field(default=True)
+    ready: bool = Field(True)
+    age: int = Field(10, title="Age")
+```
+
 <!-- ### BP010: Replace `pydantic.parse_obj_as` by `pydantic.TypeAdapter`
 
 - ✅ Replace `pydantic.parse_obj_as(T, obj)` to `pydantic.TypeAdapter(T).validate_python(obj)`.
