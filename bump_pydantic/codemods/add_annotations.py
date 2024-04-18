@@ -113,6 +113,8 @@ class AddAnnotationsCommand(VisitorBasedCodemodCommand):
         if not self.in_field:
             return updated_node
         if self.inside_base_model:
+            if m.matches(updated_node, m.Assign(targets=[m.AssignTarget(target=m.Name("model_config"))])):
+                return updated_node
             Undefined = object()
             value: cst.BaseExpression | object = Undefined
             if m.matches(updated_node.value, m.Call(func=m.Name("Field"))):
