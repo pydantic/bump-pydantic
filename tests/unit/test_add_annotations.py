@@ -69,6 +69,7 @@ class TestAddAnnotationsCommand(UnitTest):
                 active = Field(default=True)
                 ready = Field(True)
                 age = Field(10, title="Age")
+                model_config = ConfigDict(from_attributes=True)
 
                 def do_stuff(self):
                     something = [1, 2, 3]
@@ -93,6 +94,7 @@ class TestAddAnnotationsCommand(UnitTest):
                 active: bool = Field(default=True)
                 ready: bool = Field(True)
                 age: int = Field(10, title="Age")
+                model_config = ConfigDict(from_attributes=True)
 
                 def do_stuff(self):
                     something = [1, 2, 3]
