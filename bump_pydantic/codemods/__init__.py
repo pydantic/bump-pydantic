@@ -4,6 +4,7 @@ from typing import List, Type
 from libcst.codemod import ContextAwareTransformer
 from libcst.codemod.visitors import AddImportsVisitor, RemoveImportsVisitor
 
+from bump_pydantic.codemods.add_annotations import AddAnnotationsCommand
 from bump_pydantic.codemods.add_default_none import AddDefaultNoneCommand
 from bump_pydantic.codemods.con_func import ConFuncCallCommand
 from bump_pydantic.codemods.custom_types import CustomTypeCodemod
@@ -34,6 +35,8 @@ class Rule(str, Enum):
     """Replace `con*` functions by `Annotated` versions."""
     BP009 = "BP009"
     """Mark Pydantic "protocol" functions in custom types with proper TODOs."""
+    BP010 = "BP010"
+    """Add type annotations or TODOs to fields without them."""
 
 
 def gather_codemods(disabled: List[Rule]) -> List[Type[ContextAwareTransformer]]:
@@ -66,6 +69,9 @@ def gather_codemods(disabled: List[Rule]) -> List[Type[ContextAwareTransformer]]
 
     if Rule.BP009 not in disabled:
         codemods.append(CustomTypeCodemod)
+
+    if Rule.BP010 not in disabled:
+        codemods.append(AddAnnotationsCommand)
 
     # Those codemods need to be the last ones.
     codemods.extend([RemoveImportsVisitor, AddImportsVisitor])
