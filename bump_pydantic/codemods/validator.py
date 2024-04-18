@@ -142,8 +142,10 @@ class ValidatorCodemod(VisitorBasedCodemodCommand):
             self._should_add_comment = False
             return updated_node
 
-        classmethod_decorator = cst.Decorator(decorator=cst.Name("classmethod"))
-        return updated_node.with_changes(decorators=[*updated_node.decorators, classmethod_decorator])
+        if not any(m.matches(d, m.Decorator(decorator=m.Name("classmethod"))) for d in updated_node.decorators):
+            classmethod_decorator = cst.Decorator(decorator=cst.Name("classmethod"))
+            updated_node = updated_node.with_changes(decorators=[*updated_node.decorators, classmethod_decorator])
+        return updated_node
 
     def _decorator_with_leading_comment(self, node: cst.Decorator, comment: str) -> cst.Decorator:
         return node.with_changes(
