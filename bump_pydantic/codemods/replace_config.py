@@ -23,7 +23,6 @@ REMOVED_KEYS = [
     "underscore_attrs_are_private",
     "json_loads",
     "json_dumps",
-    "json_encoders",
     "copy_on_model_validation",
     "post_init_call",
 ]
