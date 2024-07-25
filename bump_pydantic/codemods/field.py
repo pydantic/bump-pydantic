@@ -4,6 +4,7 @@ import libcst as cst
 from libcst import matchers as m
 from libcst.codemod import CodemodContext, VisitorBasedCodemodCommand
 from libcst.codemod.visitors import AddImportsVisitor, RemoveImportsVisitor
+from pydantic import Field
 
 RENAMED_KEYWORDS = {
     "min_items": "min_length",
@@ -111,9 +112,27 @@ class FieldCodemod(VisitorBasedCodemodCommand):
         if not self.has_field_import or not self.inside_field_assign:
             return updated_node
 
+        json_schema_extra_elements: List[cst.DictElement] = []
         new_args: List[cst.Arg] = []
         for arg in updated_node.args:
             if m.matches(arg, m.Arg(keyword=m.Name())):
+                if arg.keyword is not None:
+                    if arg.keyword.value == "json_schema_extra":
+                        json_schema_extra_elements.extend(arg.value.elements)  # type: ignore
+                        continue
+
+                    if (
+                        (arg.keyword.value not in RENAMED_KEYWORDS)
+                        and (arg.keyword.value not in Field.__annotations__)
+                        and (arg.keyword != "extra")
+                    ):
+                        new_dict_element = cst.DictElement(
+                            key=cst.SimpleString(value=f'"{arg.keyword.value}"'),
+                            value=arg.value,
+                        )
+                        json_schema_extra_elements.append(new_dict_element)
+                        continue
+
                 keyword = RENAMED_KEYWORDS.get(arg.keyword.value, arg.keyword.value)  # type: ignore
                 value = arg.value
                 if arg.keyword:
@@ -130,6 +149,17 @@ class FieldCodemod(VisitorBasedCodemodCommand):
                 new_args.append(new_arg)  # type: ignore
             else:
                 new_args.append(arg)
+
+        if len(json_schema_extra_elements) > 0:
+            extra_arg = cst.Arg(
+                value=cst.Dict(elements=json_schema_extra_elements),
+                keyword=cst.Name(value="json_schema_extra"),
+                equal=cst.AssignEqual(
+                    whitespace_before=cst.SimpleWhitespace(""), whitespace_after=cst.SimpleWhitespace("")
+                ),
+            )
+
+            new_args.append(extra_arg)
 
         return updated_node.with_changes(args=new_args)
 
