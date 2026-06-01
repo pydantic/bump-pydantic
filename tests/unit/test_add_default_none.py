@@ -17,9 +17,9 @@ class TestClassDefVisitor(UnitTest):
         mod = MetadataWrapper(
             parse_module(CodemodTest.make_fixture_data(code)),
             cache={
-                FullyQualifiedNameProvider: FullyQualifiedNameProvider.gen_cache(Path(""), [file_path], None).get(
-                    file_path, ""
-                )
+                FullyQualifiedNameProvider: FullyQualifiedNameProvider.gen_cache(
+                    Path(""), [file_path], timeout=None
+                ).get(file_path, "")
             },
         )
         mod.resolve_many(AddDefaultNoneCommand.METADATA_DEPENDENCIES)

@@ -38,6 +38,12 @@ class ClassDefVisitor(VisitorBasedCodemodCommand):
         self.context.scratch.setdefault(self.NO_BASE_MODEL_CONTEXT_KEY, set())
         self.context.scratch.setdefault(self.CLS_CONTEXT_KEY, defaultdict(set))
 
+    def _recursively_disambiguate(self, classname: str, context_set: set[str]) -> None:
+        if classname in context_set and classname in self.context.scratch[self.CLS_CONTEXT_KEY]:
+            for child_classname in self.context.scratch[self.CLS_CONTEXT_KEY].pop(classname):
+                context_set.add(child_classname)
+                self._recursively_disambiguate(child_classname, context_set)
+
     def visit_ClassDef(self, node: cst.ClassDef) -> None:
         fqn_set = self.get_metadata(FullyQualifiedNameProvider, node)
 
@@ -60,30 +66,24 @@ class ClassDefVisitor(VisitorBasedCodemodCommand):
                     self.context.scratch[self.NO_BASE_MODEL_CONTEXT_KEY].add(fqn.name)
 
             # In case we have the following scenario:
+            # class ChildA(A):
             # class A(B): ...
             # class B(BaseModel): ...
             # class D(C): ...
             # class C: ...
-            # We want to disambiguate `A` as soon as we see `B` is a `BaseModel`.
-            if (
-                fqn.name in self.context.scratch[self.BASE_MODEL_CONTEXT_KEY]
-                and fqn.name in self.context.scratch[self.CLS_CONTEXT_KEY]
-            ):
-                for parent_class in self.context.scratch[self.CLS_CONTEXT_KEY].pop(fqn.name):
-                    self.context.scratch[self.BASE_MODEL_CONTEXT_KEY].add(parent_class)
+            # We want to disambiguate `A` and then `ChildA` as soon as we see `B` is a `BaseModel`.
+            # We recursively add child classes to self.BASE_MODEL_CONTEXT_KEY.
+            self._recursively_disambiguate(fqn.name, self.context.scratch[self.BASE_MODEL_CONTEXT_KEY])
 
             # In case we have the following scenario:
             # class A(B): ...
             # class B(BaseModel): ...
+            # class E(D): ...
             # class D(C): ...
             # class C: ...
-            # We want to disambiguate `D` as soon as we see `C` is NOT a `BaseModel`.
-            if (
-                fqn.name in self.context.scratch[self.NO_BASE_MODEL_CONTEXT_KEY]
-                and fqn.name in self.context.scratch[self.CLS_CONTEXT_KEY]
-            ):
-                for parent_class in self.context.scratch[self.CLS_CONTEXT_KEY].pop(fqn.name):
-                    self.context.scratch[self.NO_BASE_MODEL_CONTEXT_KEY].add(parent_class)
+            # We want to disambiguate `D` and then `E` as soon as we see `C` is NOT a `BaseModel`.
+            # We recursively add child classes to self.NO_BASE_MODEL_CONTEXT_KEY.
+            self._recursively_disambiguate(fqn.name, self.context.scratch[self.NO_BASE_MODEL_CONTEXT_KEY])
 
             # In case we have the following scenario:
             # class A(B): ...
