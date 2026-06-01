@@ -278,6 +278,51 @@ class TestValidatorCommand(CodemodTest):
         """
         self.assertCodemod(before, after)
 
+    def test_replace_validator_existing_classmethod_decorator(self) -> None:
+        before = """
+        from pydantic import validator
+
+
+        class Potato(BaseModel):
+            name: str
+            dialect: str
+
+            @root_validator(pre=True, allow_reuse=True)
+            @classmethod
+            def _normalize_fields(cls, values: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
+                if "gateways" not in values and "gateway" in values:
+                    values["gateways"] = values.pop("gateway")
+
+            @validator("name", "dialect", pre=False)
+            @classmethod
+            def _string_validator(cls, v: t.Any) -> t.Optional[str]:
+                if isinstance(v, exp.Expression):
+                    return v.name.lower()
+                return str(v).lower() if v is not None else None
+        """
+        after = """
+        from pydantic import field_validator, model_validator
+
+
+        class Potato(BaseModel):
+            name: str
+            dialect: str
+
+            @model_validator(mode="before")
+            @classmethod
+            def _normalize_fields(cls, values: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
+                if "gateways" not in values and "gateway" in values:
+                    values["gateways"] = values.pop("gateway")
+
+            @field_validator("name", "dialect")
+            @classmethod
+            def _string_validator(cls, v: t.Any) -> t.Optional[str]:
+                if isinstance(v, exp.Expression):
+                    return v.name.lower()
+                return str(v).lower() if v is not None else None
+        """
+        self.assertCodemod(before, after)
+
     @pytest.mark.xfail(reason="Not implemented yet")
     def test_import_pydantic(self) -> None:
         before = """
