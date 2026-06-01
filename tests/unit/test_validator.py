@@ -278,6 +278,39 @@ class TestValidatorCommand(CodemodTest):
         """
         self.assertCodemod(before, after)
 
+    def test_replace_validator_with_existing_classmethod(self) -> None:
+        before = """
+        from pydantic import validator
+
+
+        class Potato(BaseModel):
+            name: str
+            dialect: str
+
+            @validator("name", "dialect")
+            @classmethod
+            def _string_validator(cls, v: t.Any) -> t.Optional[str]:
+                if isinstance(v, exp.Expression):
+                    return v.name.lower()
+                return str(v).lower() if v is not None else None
+        """
+        after = """
+        from pydantic import field_validator
+
+
+        class Potato(BaseModel):
+            name: str
+            dialect: str
+
+            @field_validator("name", "dialect")
+            @classmethod
+            def _string_validator(cls, v: t.Any) -> t.Optional[str]:
+                if isinstance(v, exp.Expression):
+                    return v.name.lower()
+                return str(v).lower() if v is not None else None
+        """
+        self.assertCodemod(before, after)
+
     @pytest.mark.xfail(reason="Not implemented yet")
     def test_import_pydantic(self) -> None:
         before = """
